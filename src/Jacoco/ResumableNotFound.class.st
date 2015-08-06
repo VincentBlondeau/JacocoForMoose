@@ -25,7 +25,7 @@ Internal Representation and Key Implementation Points.
 Class {
 	#name : #ResumableNotFound,
 	#superclass : #NotFound,
-	#category : #'Jacoco-Import'
+	#category : #Jacoco
 }
 
 { #category : #'as yet unclassified' }

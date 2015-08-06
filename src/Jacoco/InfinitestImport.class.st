@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'testClass'
 	],
-	#category : #'Jacoco-Import'
+	#category : #'Jacoco-Infinitest'
 }
 
 { #category : #'as yet unclassified' }
@@ -41,7 +41,7 @@ InfinitestImport >> importAssocInModel: anAssociation [
 							candidateClass flatten at: (change substrings: '$') second asNumber ] ] ].
 	changedEntity isConsideredAsChangedByInfinitest: true.
 	mooseCoveredTests := anAssociation value collect: [ :e | model entityNamed: e ].
-	changedEntity infinitestTests: mooseCoveredTests
+	changedEntity coveredByInfinitestTests: mooseCoveredTests
 ]
 
 { #category : #accessing }

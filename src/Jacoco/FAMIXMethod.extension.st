@@ -1,22 +1,22 @@
 Extension { #name : #FAMIXMethod }
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> addCoveredByTestClass: aFAMIXClass [ 
-	self coveredByTestClasses add: aFAMIXClass 
+FAMIXMethod >> addCoveredByJacocoTestClass: aFAMIXClass [ 
+	self coveredByJacocoTestClasses add: aFAMIXClass 
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allIncomingInvocations [
 	^ self deepCollect: [ :entity | entity incomingInvocations collect: [ :inv | inv from ] ]
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allOutgoingInvocations [
 	^ self deepCollect: [ :entity | entity outgoingInvocations collect: [ :inv | inv to ] ]
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> callingCoveredTestsClasses [
+FAMIXMethod >> calledCoveredTestsClasses [
 	^ (self
 		deepCollect: [ :entity | 
 			entity incomingInvocations
@@ -24,11 +24,11 @@ FAMIXMethod >> callingCoveredTestsClasses [
 					inv from	"isStub
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
-				thenSelect: #isNotNil ]) select: #isCoveringMethods
+				thenSelect: #isNotNil ]) select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> callingTestsClasses [
+FAMIXMethod >> calledTestsClasses [
 	^ (self
 		deepCollect: [ :entity | 
 			entity incomingInvocations
@@ -40,19 +40,34 @@ FAMIXMethod >> callingTestsClasses [
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> coveredByTestClasses [
-	<MSEProperty: #coveredByTestClasses type: #FAMIXClass opposite: #coverMethods>
+FAMIXMethod >> coverJacocoMethods [
+	<MSEProperty: #coverJacocoMethods type: #FAMIXMethod opposite: #coveredByJacocoTestClasses>
 	<multivalued>
-	<MSEComment: 'Classes whose tests cover this method'>
+	<MSEComment: 'Methods that are covered by this class'>
 	^ self privateState
-		attributeAt: #coveredByTestClasses
-		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coverMethods ]
+		attributeAt: #coverJacocoMethods
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coveredByJacocoTestClasses ]
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> coverJacocoMethods: aCollection [
+	self coverJacocoMethods values: aCollection
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> coveredByJacocoTestClasses [
+	<MSEProperty: #coveredByJacocoTestClasses type: #FAMIXMethod opposite: #coverJacocoMethods>
+	<multivalued>
+	<MSEComment: 'Methods whose tests cover this method'>
+	^ self privateState
+		attributeAt: #coveredByJacocoTestClasses
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coverJacocoMethods ]
 ]
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> coveredByTestClassesWithoutSomeClasses [
 
-	^ self coveredByTestClasses reject: [ :c | c mooseName = 'net::atos::wlp::cedicam::AbstractTest' ]
+	^ self coveredByJacocoTestClasses reject: [ :c | c mooseName = 'net::atos::wlp::cedicam::AbstractTest' ]
 ]
 
 { #category : #'*Jacoco-Import' }
@@ -64,7 +79,7 @@ FAMIXMethod >> isCallingCoveredTestsClasses [
 					inv from	"isStub
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
-				thenSelect: #isNotNil ]) anySatisfy: #isCoveringMethods
+				thenSelect: #isNotNil ]) anySatisfy: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
@@ -80,20 +95,23 @@ FAMIXMethod >> isCallingTestsClasses [
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> isCoveredByTestClasses [
-	<MSEProperty: #isCoveredByTestClasses type: #Boolean>
+FAMIXMethod >> isCoveredByJacocoTestClasses [
+	<MSEProperty: #isCoveredByJacocoTestClasses type: #Boolean>
 	<multivalued>
 	<derived>
 	<MSEComment: 'If the method is covered by tests'>
-	^ self coveredByTestClasses isNotEmpty
+	^ self coveredByJacocoTestClasses isNotEmpty
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> isCoveringMethods [
-	^ self belongsTo isCoveringMethods
+FAMIXMethod >> isCoveringJacocoMethods [
+	<MSEProperty: #isCoveringJacocoMethods type: #Boolean>
+	<multivalued>
+	<MSEComment: 'True is the class covers methods'>
+	^ self coverJacocoMethods isNotEmpty
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> isIgnored [
 	<MSEProperty: #isIgnored type: #Boolean>
 	<multivalued>
@@ -104,7 +122,7 @@ FAMIXMethod >> isIgnored [
 		ifAbsentPut: [ self annotationInstances contains: [ :instance | instance annotationType name = 'Ignore' ] ]
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> isNotIgnoredTest [
 	<MSEProperty: #isNotIgnoredTest type: #Boolean>
 	<multivalued>
@@ -113,7 +131,7 @@ FAMIXMethod >> isNotIgnoredTest [
 	^ self isTest and: [ self isIgnored not ]
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> isTest [
 	<MSEProperty: #isTest type: #Boolean>
 	<multivalued>

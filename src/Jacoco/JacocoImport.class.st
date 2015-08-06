@@ -4,10 +4,10 @@ Class {
 	#instVars : [
 		'testClass'
 	],
-	#category : #'Jacoco-Import'
+	#category : #Jacoco
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #private }
 JacocoImport >> basicRun [
 	| files |
 	files := self coverageXmlfolder asFileReference allFiles.
@@ -19,7 +19,7 @@ JacocoImport >> coverageXmlfolder [
 	^ 'C:\Data\Cedicam\WS\git\wlp-product-master-pom\wlp-product-test\XML Coverages'
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 JacocoImport >> description [
 	^ 'XML coverage import'
 ]
@@ -43,6 +43,7 @@ JacocoImport >> importClassXml: aXMLElement [
 JacocoImport >> importFile: aFileReference [
 	| name className xml className2 |
 	name := aFileReference basename.
+	self halt.
 	className := aFileReference basename copyFrom: 1 to: name size - 9.
 	className2 := '::' join: (className substrings: '.').
 	testClass := model allClasses select: [ :c | c mooseName = className2 ].
@@ -94,7 +95,7 @@ JacocoImport >> importMethodFromXml: aXMLElement fromContainedClass: aFAMIXClass
 										ifFalse: [ constructor := constructorTemp ] ].
 							self assert: constructor size = 1.
 							constructor := constructor first.
-							constructor addCoveredByTestClass: testClass ] ]
+							constructor addCoveredByJacocoTestClass: testClass ] ]
 				ifFalse: [ 
 					methodCovered := aFAMIXClass methods
 						select: [ :m | m name = name and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
@@ -104,7 +105,7 @@ JacocoImport >> importMethodFromXml: aXMLElement fromContainedClass: aFAMIXClass
 							methodCovered size = 1
 								ifFalse: [ self logCr: 'Several method found...' , methodCovered printString ].
 							methodCovered := methodCovered first.
-							methodCovered addCoveredByTestClass: testClass ] ] ]
+							methodCovered addCoveredByJacocoTestClass: testClass ] ] ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -120,12 +121,12 @@ JacocoImport >> importXML: aXMLDocument [
 				do: [ :aClassXmlNode | self importClassXml: aClassXmlNode ] ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 JacocoImport >> length [
 	^ self coverageXmlfolder asFileReference allFiles size
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #parsing }
 JacocoImport >> parseDescription: aString [
 	| cut args returnVal  |
 	cut := aString subStrings: ')'.

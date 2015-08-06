@@ -1,44 +1,45 @@
 Extension { #name : #FAMIXType }
 
-{ #category : #'*Jacoco-Import' }
-FAMIXType >> addInfinitestTests: aCollection [
-	self shouldBeImplemented
-]
-
-{ #category : #'*Jacoco-Import' }
-FAMIXType >> coverMethods [
-	<MSEProperty: #coverMethods type: #FAMIXMethod opposite: #coveredByTestClasses>
+{ #category : #'*Jacoco-Infinitest' }
+FAMIXType >> coverInfinitestClasses [
+	<MSEProperty: #coverInfinitestClasses type: #FAMIXClass opposite: #coveredByInfinitestTests>
 	<multivalued>
-	<MSEComment: 'Methods that are covered by this class'>
+	<MSEComment: 'Non Test classes that are covered by the test. The class must be a test to be not empty'>
 	^ self privateState
-		attributeAt: #coverMethods
-		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coveredByTestClasses ]
+		attributeAt: #coverInfinitestClasses
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coveredByInfinitestTests ]
+
 ]
 
-{ #category : #'*Jacoco-Import' }
-FAMIXType >> coverMethods: aCollection [
-	self coverMethods values: aCollection
+{ #category : #'*Jacoco-Infinitest' }
+FAMIXType >> coverInfinitestClasses: aCollection [
+	self coverInfinitestClasses values: aCollection
 ]
 
-{ #category : #'*Jacoco-Import' }
-FAMIXType >> infinitestTests: aCollection [
-	self privateState attributeAt: #infinitestTests put: aCollection
+{ #category : #'*Jacoco-Infinitest' }
+FAMIXType >> coveredByInfinitestTests [
+	<MSEProperty: #coveredByInfinitestTests type: #FAMIXClass opposite: #coverInfinitestClasses>
+	<multivalued>
+	<MSEComment: 'Test classes that cover this class'>
+	^ self privateState
+		attributeAt: #coveredByInfinitestTests
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coverInfinitestClasses ]
+
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Infinitest' }
+FAMIXType >> coveredByInfinitestTests: aCollection [
+	self coveredByInfinitestTests values: aCollection
+]
+
+{ #category : #'*Jacoco-Infinitest' }
 FAMIXType >> isConsideredAsChangedByInfinitest [
+	<MSEProperty: #isConsideredAsChangedByInfinitest type: #Boolean>
+	<MSEComment: 'True is chansidered as changed by infinitest'>
 	^ self privateState attributeAt: #isConsideredAsChangedByInfinitest ifAbsentPut: [ false ]
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Infinitest' }
 FAMIXType >> isConsideredAsChangedByInfinitest: aBoolean [
 	self privateState attributeAt: #isConsideredAsChangedByInfinitest put: aBoolean
-]
-
-{ #category : #'*Jacoco-Import' }
-FAMIXType >> isCoveringMethods [
-	<MSEProperty: #isCoveringMethods type: #Boolean>
-	<multivalued>
-	<MSEComment: 'True is the class covers methods'>
-	^ self coverMethods isNotEmpty
 ]

@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'testClass'
 	],
-	#category : #'Jacoco-Import'
+	#category : #Jacoco
 }
 
 { #category : #'as yet unclassified' }
@@ -23,9 +23,9 @@ stream := 'export.csv' asFileReference writeStream.
 res := (coveredMethods reject: [:m | (m isStub or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::AbstractTest']) or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::RootAbstractTest'  ] ]).
 res := 	((model allModelMethods  reject: #isStub )collect: [ :m | 
 	
-	positives := m callingCoveredTestsClasses.
-	all := m callingTestsClasses.
-	realData := m coveredByTestClasses flatCollect: [ :c | c methods select: [:m2 | m2 isTest and: [ m2 isIgnored not ] ]].
+	positives := m calledCoveredTestsClasses.
+	all := m calledTestsClasses.
+	realData := m coveredByJacocoTestClasses flatCollect: [ :c | c methods select: [:m2 | m2 isTest and: [ m2 isIgnored not ] ]].
 	
 	tp := positives intersection: realData.
 	fn := realData difference: positives.
@@ -33,7 +33,7 @@ res := 	((model allModelMethods  reject: #isStub )collect: [ :m |
 	tn := (all difference: realData ) difference: positives .
 	"nom - couverte - tp & cie"
 
-	stream << (m mooseName, ';', m isCoveredByTestClasses asString, ';', tp size asString, ';', fn size asString, ';',fp size asString, ';', tn size asString).
+	stream << (m mooseName, ';', m isCoveredByJacocoTestClasses asString, ';', tp size asString, ';', fn size asString, ';',fp size asString, ';', tn size asString).
 	stream cr.
 		
 	{  tp size . fn size . fp size. tn size . positives . (tp size  + fp size) = 0  ifTrue:[nil] ifFalse: [tp size / (tp size +  fp size)].(tp size  + fn size) = 0 ifTrue:[nil] ifFalse: [tp size / (tp size +  fn size)]}
@@ -49,7 +49,7 @@ precision := total first / (total first + total third).
 recall :=  total first / (total first + total second). 
 {precision asFloat . recall asFloat }.
 
-(coveredMethods collect: [ :m | m callingCoveredTestsClasses  ] ) flatten.
+(coveredMethods collect: [ :m | m calledCoveredTestsClasses  ] ) flatten.
 
 
 
