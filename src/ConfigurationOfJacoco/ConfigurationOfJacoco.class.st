@@ -115,7 +115,7 @@ ConfigurationOfJacoco >> baseline01: spec [
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
 		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
-		spec package: 'Jacoco-Import'. ].
+		spec package: 'Jacoco'. ].
 
 ]
 
