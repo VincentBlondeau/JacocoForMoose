@@ -2,7 +2,7 @@ Class {
 	#name : #JacocoImport,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'testClass'
+		'testMethod'
 	],
 	#category : #Jacoco
 }
@@ -26,29 +26,25 @@ JacocoImport >> description [
 
 { #category : #'as yet unclassified' }
 JacocoImport >> importClassXml: aXMLElement [
-	| name className classCovered className2 |
+	| name className classCovered className2 allClasses |
 	name := aXMLElement attributeAt: 'name'.
 	className := name replaceAll: $/ with: $..
-	className2 := ('::' join: (className substrings: '.')).
-	classCovered := model allClasses select: [ :c | c mooseName = className2 ].
-	classCovered
-		ifEmpty: [ self logCr: 'Class covered: ' , name , ' notFound.' ]
-		ifNotEmpty: [ 
-			self assert: classCovered size = 1.
-			classCovered := classCovered first.
-			self importMethodFromXml: aXMLElement fromContainedClass: classCovered ]
+	className2 := '::' join: (className substrings: '.').
+	allClasses := model allClasses.
+	classCovered := allClasses
+		entityNamed: className2
+		ifAbsent: [ self logCr: '[Jacoco] Info: Class covered: ' , name , ' not Found in model.'. nil ].
+	classCovered ifNotNil: [ self importMethodFromXml: aXMLElement fromContainedClass: classCovered ]
 ]
 
 { #category : #'as yet unclassified' }
 JacocoImport >> importFile: aFileReference [
-	| name methodName xml methodName2  methodNameDecomposed testMethod |
+	| name methodName xml methodName2  methodNameDecomposed |
 	name := aFileReference basename.
 
 	methodName := aFileReference basename copyFrom: 'void ' size +1 to: name size - 9.
 	methodNameDecomposed := methodName substrings: '.'.
 	methodName2 := ('::' join: methodNameDecomposed allButLast) , '.',methodNameDecomposed last.
-		self halt.
-	"allmethodes := model allModelMethods.	""decomposed due to bug 16105"
 	testMethod := model entityNamed: methodName2  .
 	self assert: testMethod isNotNil.
 	xml := XMLDOMParser parse: aFileReference readStream.
@@ -71,7 +67,7 @@ JacocoImport >> importMethodCoverageFile: aFileReference [
 
 { #category : #'as yet unclassified' }
 JacocoImport >> importMethodFromXml: aXMLElement fromContainedClass: aFAMIXClass [
-	| name constructor description methodCovered constructorTemp |
+	| name constructor description methodCovered constructorTemp methods |
 	aXMLElement
 		allElementsNamed: 'method'
 		do: [ :aMethodXmlElement | 
@@ -79,34 +75,42 @@ JacocoImport >> importMethodFromXml: aXMLElement fromContainedClass: aFAMIXClass
 			description := self parseDescription: (aMethodXmlElement attributeAt: 'desc').
 			name = '<init>'
 				ifTrue: [ 
-					constructor := aFAMIXClass methods
+					methods := aFAMIXClass methods.
+					constructor := methods
 						select: [ :m | m isConstructor and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
 					constructor
-						ifEmpty: [ self logCr: 'Method ' , name , 'in Class ' , aFAMIXClass mooseName , 'notFound.' ]
+						ifEmpty: [ self logCr: '[Jacoco] Info: initializer Method ' , name , 'in Class ' , aFAMIXClass mooseName , ' not Found.' ]
 						ifNotEmpty: [ 
 							constructor size = 1
 								ifFalse: [ 
 									constructorTemp := constructor reject: #isStub.
 									constructorTemp size ~= 1
 										ifTrue: [ 
-											self logCr: 'Random selection in ' , constructor printString.
+											self logCr: '[Jacoco] Error: Random selection in ' , constructor printString.
 											constructor := {"Should resolve signature matching"
 											"Should resolve signature matching"
-											(constructor first)}	"Should resolve signature matching"	"Should resolve signature matching" ]
+											"Should resolve signature matching"
+											"Should resolve signature matching"
+											"Should resolve signature matching"
+											"Should resolve signature matching"
+											"Should resolve signature matching"
+											"Should resolve signature matching"
+											constructor first}	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching"	"Should resolve signature matching" ]
 										ifFalse: [ constructor := constructorTemp ] ].
 							self assert: constructor size = 1.
 							constructor := constructor first.
-							constructor addCoveredByJacocoTestClass: testClass ] ]
+							constructor addCoveredByJacocoTestClass: testMethod ] ]
 				ifFalse: [ 
-					methodCovered := aFAMIXClass methods
+					methods := aFAMIXClass methods.
+					methodCovered := methods
 						select: [ :m | m name = name and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
 					methodCovered
-						ifEmpty: [ self logCr: 'Method ' , name , 'in Class ' , aFAMIXClass mooseName , 'notFound.' ]
+						ifEmpty: [ self logCr: '[Jacoco] Info: Standard Method ' , name , 'in Class ' , aFAMIXClass mooseName , ' not Found.' ]
 						ifNotEmpty: [ 
 							methodCovered size = 1
-								ifFalse: [ self logCr: 'Several method found...' , methodCovered printString ].
+								ifFalse: [ self logCr: '[Jacoco] Error: Several method found... Take random...' , methodCovered printString ].
 							methodCovered := methodCovered first.
-							methodCovered addCoveredByJacocoTestClass: testClass ] ] ]
+							methodCovered addCoveredByJacocoTestClass: testMethod ] ] ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -130,8 +134,8 @@ JacocoImport >> length [
 { #category : #parsing }
 JacocoImport >> parseDescription: aString [
 	| cut args returnVal  |
-	cut := aString subStrings: ')'.
-	args := cut first allButFirst subStrings: ';'.
+	cut := aString substrings: ')'.
+	args := cut first allButFirst substrings: ';'.
 	returnVal := cut second.
 	^{returnVal} , args.
 
