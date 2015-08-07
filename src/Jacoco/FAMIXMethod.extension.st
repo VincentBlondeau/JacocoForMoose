@@ -134,10 +134,7 @@ FAMIXMethod >> isNotIgnoredTest [
 { #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> isTest [
 	<MSEProperty: #isTest type: #Boolean>
-	<multivalued>
 	<derived>
 	<MSEComment: 'If the method is a test'>
-	^ self privateState
-		attributeAt: #isTest
-		ifAbsentPut: [ self annotationInstances contains: [ :instance | instance annotationType name = 'Test' ] ]
+	^ self isJUnit4Test
 ]

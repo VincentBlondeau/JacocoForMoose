@@ -16,7 +16,7 @@ JacocoImport >> basicRun [
 
 { #category : #'as yet unclassified' }
 JacocoImport >> coverageXmlfolder [
-	^ 'C:\Data\Cedicam\WS\git\wlp-product-master-pom\wlp-product-test\XML Coverages'
+	^ 'artifacts/XML_REPORTS'
 ]
 
 { #category : #accessing }
@@ -41,17 +41,18 @@ JacocoImport >> importClassXml: aXMLElement [
 
 { #category : #'as yet unclassified' }
 JacocoImport >> importFile: aFileReference [
-	| name className xml className2 |
+	| name methodName xml methodName2  methodNameDecomposed testMethod |
 	name := aFileReference basename.
-	self halt.
-	className := aFileReference basename copyFrom: 1 to: name size - 9.
-	className2 := '::' join: (className substrings: '.').
-	testClass := model allClasses select: [ :c | c mooseName = className2 ].
-	self assert: testClass size = 1.
-	testClass := testClass first.
+
+	methodName := aFileReference basename copyFrom: 'void ' size +1 to: name size - 9.
+	methodNameDecomposed := methodName substrings: '.'.
+	methodName2 := ('::' join: methodNameDecomposed allButLast) , '.',methodNameDecomposed last.
+		self halt.
+	"allmethodes := model allModelMethods.	""decomposed due to bug 16105"
+	testMethod := model entityNamed: methodName2  .
+	self assert: testMethod isNotNil.
 	xml := XMLDOMParser parse: aFileReference readStream.
-	self importXML: xml.
-	
+	self importXML: xml
 ]
 
 { #category : #'as yet unclassified' }
