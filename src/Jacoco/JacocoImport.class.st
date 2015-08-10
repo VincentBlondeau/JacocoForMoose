@@ -47,8 +47,8 @@ JacocoImport >> importFile: aFileReference [
 	methodName2 := ('::' join: methodNameDecomposed allButLast) , '.',methodNameDecomposed last.
 	testMethod := model entityNamed: methodName2  .
 	self assert: testMethod isNotNil.
-	xml := XMLDOMParser parse: aFileReference readStream.
-	self importXML: xml
+	[xml := XMLDOMParser parse: aFileReference readStream. 
+	self importXML: xml] on: FileDoesNotExist do: [ self logCr: '[Jacoco]Error: file named ', name , 'doesn''t exists!' ]
 ]
 
 { #category : #'as yet unclassified' }

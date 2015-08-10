@@ -29,7 +29,7 @@ FAMIXType >> coveredByInfinitestTests [
 
 { #category : #'*Jacoco-Infinitest' }
 FAMIXType >> coveredByInfinitestTests: aCollection [
-	self coveredByInfinitestTests values: aCollection
+	self coveredByInfinitestTests value: aCollection
 ]
 
 { #category : #'*Jacoco-Infinitest' }
