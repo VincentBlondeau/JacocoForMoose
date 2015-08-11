@@ -92,10 +92,11 @@ FAMIXMethod >> isIgnored [
 	<MSEProperty: #isIgnored type: #Boolean>
 	<multivalued>
 	<derived>
-	<MSEComment: 'If the method is a test'>
-	^ self privateState
+	<MSEComment:
+		'If the method is a test, it can be annotated with Ignore, the test is Bypassed'>
+	^ "self privateState
 		attributeAt: #isIgnored
-		ifAbsentPut: [ self annotationInstances contains: [ :instance | instance annotationType name = 'Ignore' ] ]
+		ifAbsentPut: [ "self isAnnotatedWith: 'Ignore' "]"
 ]
 
 { #category : #'*Jacoco-Import tests' }

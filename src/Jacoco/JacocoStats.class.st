@@ -2,44 +2,89 @@ Class {
 	#name : #JacocoStats,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'testClass'
+		'testClass',
+		'index'
 	],
 	#category : #Jacoco
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #stats }
+JacocoStats >> calculateInfinitestStatsOn: method [
+	| positives realData tp fn fp |
+	positives := method staticlyFoundInfinitestTestMethodsCallingMyself.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	realData := method coveredByJacocoTestMethods asMooseGroup selectNotIgnoredTests asOrderedCollection.
+	tp := positives intersection: realData.
+	fn := realData difference: positives.
+	fp := positives difference: realData.
+	"tn := (all difference: realData) difference: positives."
+	"nom - couverte - tp & cie"
+	^ {(#mooseName -> method mooseName).
+	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
+	(#tp -> tp).
+	(#fn -> fn).
+	(#fp -> fp).
+	(#positives -> positives).
+	(#jacoco -> realData)	".
+	(#tn -> tn)"} asDictionary
+]
+
+{ #category : #stats }
 JacocoStats >> calculatePrecisionMeanOn: res [
 	| elements |
 	elements := res
 		collect: [ :e | self calculatePrecisionOn: e ]
 		thenReject: #isNil.
-	self halt.
-	^ res average: [ :e | self calculatePrecisionOn: e ]
+	^ elements asOrderedCollection average
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #stats }
 JacocoStats >> calculatePrecisionOn: aDictionary [
 	| tp fp |
 	tp := aDictionary at: #tp.
 	fp := aDictionary at: #fp.
 	^ tp size + fp size = 0
 		ifTrue: [ nil ]
-		ifFalse: [ tp size / (tp size + fp size) ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #stats }
 JacocoStats >> calculateRecallMeanOn: res [
-	^ res average: [ :e | self calculateRecallOn: e ]
+		| elements |
+	elements := res
+		collect: [ :e | self calculateRecallOn: e ]
+		thenReject: #isNil.
+	^ elements asOrderedCollection average
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #stats }
 JacocoStats >> calculateRecallOn: aDictionary [
 	| tp fn |
 	tp := aDictionary at: #tp.
 	fn := aDictionary at: #fn.
 	^ tp size + fn size = 0
-		ifTrue: [ Float nan ]
-		ifFalse: [ tp size / (tp size + fn size) ]
+		ifTrue: [ nil ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ]
+]
+
+{ #category : #stats }
+JacocoStats >> calculateStaticStatsOn: method [
+	| positives all realData tp fn fp tn |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyself.
+	all := method staticlyFoundAnyTestMethodsCallingMyself.
+	realData := method coveredByJacocoTestMethods asMooseGroup selectNotIgnoredTests asOrderedCollection.
+	tp := positives intersection: realData.
+	fn := realData difference: positives.
+	fp := positives difference: realData.
+	tn := (all difference: realData) difference: positives.
+	"nom - couverte - tp & cie"
+	^ {(#mooseName -> method mooseName).
+	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
+	(#tp -> tp).
+	(#fn -> fn).
+	(#fp -> fp).
+	(#positives -> positives).
+	(#jacoco -> realData)} asDictionary
 ]
 
 { #category : #'as yet unclassified' }
@@ -184,26 +229,53 @@ self asOrderedCollection select: [ :class | class  sourceAnchor fileName beginsW
 ]
 
 { #category : #'as yet unclassified' }
+JacocoStats >> shouldHalt [
+	index ifNil: [ index := 0 ].
+	self crLog: index.
+	index := index + 1.
+	Halt onCount: 1000
+]
+
+{ #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	| res total precision recall jacocoTests bag |
+	| res precisionMean recallMean return temp |
 	"coveredMethods := aMooseModel allModelMethodsCoveredByJacocoTestCases.
 	coveringTestsMethods := aMooseModel testsMethodsCoveringJacocoMethods."
-	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self calculateStatsOn: m ].
-	bag := res collect: [ :i | i at: #isCoveredByJacocoTestMethods ] as: Bag.
-	jacocoTests := res select: [ :i | i at: #isCoveredByJacocoTestMethods ].
-	self calculatePrecisionMeanOn: res.
-	self calculateRecallMeanOn: res.
-	"self calculatePrecisionMeanOn: jacocoTests.
-	self calculateRecallMeanOn: jacocoTests."
+	"	res := (aMooseModel allModelMethods reject: #isStub)
+		collect: [ :m | self calculateStaticStatsOn: m ].
+	precisionMean := self calculatePrecisionMeanOn: res.
+	recallMean := self calculateRecallMeanOn: res.
+	return := #jacocoVSStatic
+		->
+			{recallMean.
+			precisionMean.
+			res};
+		yourself.
+	self halt."
+	temp := aMooseModel allModelMethods reject: #isStub.
+	res := temp
+		collect: [ :m | 
+			self shouldHalt.
+			self calculateInfinitestStatsOn: m ].
+	"self shouldHalt."
 	self halt.
-	(res collect: #sixth) asOrderedCollection average asFloat.
+	"bag := res collect: [ :i | i at: #isCoveredByJacocoTestMethods ] as: Bag."
+	precisionMean := self calculatePrecisionMeanOn: res.
+	recallMean := self calculateRecallMeanOn: res.
+	^ {return.
+	(#jacocoVSInfinitest
+		->
+			{recallMean.
+			precisionMean.
+			res})}
+	"	(res collect: #sixth) asOrderedCollection average asFloat.
 	(res collect: #seventh) asOrderedCollection average asFloat.
 	total := res asOrderedCollection reduce: [ :a :b | (a first: 4) + (b first: 4) ].
 	precision := total first / (total first + total third).
 	recall := total first / (total first + total second).
 	{precision asFloat.
 	recall asFloat}
-	"(coveredMethods collect: [ :m | m staticlyFoundJacocoTestMethodsCallingMyself ]) flatten.
+"	"(coveredMethods collect: [ :m | m staticlyFoundJacocoTestMethodsCallingMyself ]) flatten.
 	self asOrderedCollection select: [ :class | class sourceAnchor fileName beginsWith: './wlp-product-test' ]"
 ]
 

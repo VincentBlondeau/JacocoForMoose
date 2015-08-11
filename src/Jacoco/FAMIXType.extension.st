@@ -43,3 +43,10 @@ FAMIXType >> isConsideredAsChangedByInfinitest [
 FAMIXType >> isConsideredAsChangedByInfinitest: aBoolean [
 	self privateState attributeAt: #isConsideredAsChangedByInfinitest put: aBoolean
 ]
+
+{ #category : #'*Jacoco-Infinitest' }
+FAMIXType >> testMethods [
+	^ self privateState
+		attributeAt: #testMethods
+		ifAbsentPut: [ self methods select: [ :m | m isNotIgnoredTest ] ]
+]
