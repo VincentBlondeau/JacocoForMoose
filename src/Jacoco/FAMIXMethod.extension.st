@@ -117,6 +117,23 @@ FAMIXMethod >> isTest [
 ]
 
 { #category : #'*Jacoco-Import' }
+FAMIXMethod >> matchWithJacocoDescription: aJacocoDescription [
+	| returnValue selfArguments jacocoArgs jacocoArgsTypes return |
+	{self signature.aJacocoDescription}.
+	returnValue := aJacocoDescription first.
+	jacocoArgs := aJacocoDescription allButFirst.
+	"self parameters ifNotEmpty: [ self halt ]."
+	selfArguments := (self signature substrings: '(') second allButLast.
+	(selfArguments substrings: ',') collect: #asLowercase.
+	jacocoArgsTypes := jacocoArgs
+		collect: [ :i | (i substrings: '/') last asLowercase ].
+	return := jacocoArgsTypes
+		= ((selfArguments substrings: ',') collect: #asLowercase).
+
+	^ return
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundAnyTestMethodsCallingMyself [
 	^ (self
 		deepCollect: [ :entity | 
