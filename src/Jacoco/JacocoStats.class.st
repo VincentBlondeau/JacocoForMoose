@@ -241,33 +241,29 @@ JacocoStats >> statsOn: aMooseModel [
 	| res precisionMean recallMean return temp |
 	"coveredMethods := aMooseModel allModelMethodsCoveredByJacocoTestCases.
 	coveringTestsMethods := aMooseModel testsMethodsCoveringJacocoMethods."
-	"	res := (aMooseModel allModelMethods reject: #isStub)
+	res := (aMooseModel allModelMethods reject: #isStub)
 		collect: [ :m | self calculateStaticStatsOn: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
 	return := #jacocoVSStatic
 		->
-			{recallMean.
-			precisionMean.
-			res};
-		yourself.
-	self halt."
+			{(#recall -> recallMean).
+			(#precision -> precisionMean).
+			(#data -> res)} asDictionary.
 	temp := aMooseModel allModelMethods reject: #isStub.
-	res := temp
-		collect: [ :m | 
-			"self shouldHalt."
-			self calculateInfinitestStatsOn: m ].
+	res := temp collect: [ :m | self calculateInfinitestStatsOn: m ].
 	"self shouldHalt."
-	self halt.
+	"self shouldHalt."
+
 	"bag := res collect: [ :i | i at: #isCoveredByJacocoTestMethods ] as: Bag."
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
 	^ {return.
 	(#jacocoVSInfinitest
 		->
-			{recallMean.
-			precisionMean.
-			res})}
+			{(#recall -> recallMean).
+			(#precision -> precisionMean).
+			(#data -> res)} asDictionary)}
 	"	(res collect: #sixth) asOrderedCollection average asFloat.
 	(res collect: #seventh) asOrderedCollection average asFloat.
 	total := res asOrderedCollection reduce: [ :a :b | (a first: 4) + (b first: 4) ].
