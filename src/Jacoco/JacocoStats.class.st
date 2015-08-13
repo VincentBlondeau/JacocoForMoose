@@ -13,7 +13,7 @@ JacocoStats >> calculateInfinitestStatsOn: method [
 	| positives realData tp fn fp |
 	positives := method staticlyFoundInfinitestTestMethodsCallingMyself.
 	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	realData := method coveredByJacocoTestMethods asMooseGroup selectNotIgnoredTests asOrderedCollection.
+	realData := (method coveredByJacocoTestMethods select: [:m | m isNotIgnoredTest ]) asOrderedCollection.
 	tp := positives intersection: realData.
 	fn := realData difference: positives.
 	fp := positives difference: realData.
@@ -255,7 +255,7 @@ JacocoStats >> statsOn: aMooseModel [
 	temp := aMooseModel allModelMethods reject: #isStub.
 	res := temp
 		collect: [ :m | 
-			self shouldHalt.
+			"self shouldHalt."
 			self calculateInfinitestStatsOn: m ].
 	"self shouldHalt."
 	self halt.

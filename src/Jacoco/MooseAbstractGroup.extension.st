@@ -11,7 +11,7 @@ MooseAbstractGroup >> methodsCoveredByJacocoTestCases [
 
 { #category : #'*Jacoco-Import tests' }
 MooseAbstractGroup >> selectNotIgnoredTests [
-	self ifNotEmpty: [ :e | self halt] 
+	^ self select: [:m | m isNotIgnoredTest ] 
 ]
 
 { #category : #'*Jacoco-Import' }

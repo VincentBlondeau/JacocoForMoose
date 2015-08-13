@@ -32,16 +32,13 @@ JacocoImport >> description [
 JacocoImport >> findClassNamedByJacoco: name [
 	"name = org/apache/log4j/helpers/PatternParser$CategoryPatternConverter"
 
-	| nameWithDots nameWithColumns |
-	nameWithDots := name replaceAll: $/ with: $..
-	nameWithColumns := '::' join: (nameWithDots substrings: '.').
+	| nameWithColumns |
+	nameWithColumns := name copyReplaceAll: '/' with: '::'.
 	^ model allClasses
 		entityNamed: nameWithColumns
 		ifAbsent:
 			[ 
-			self
-				logCr:
-					'[Jacoco] Info: Class covered: ' , name , ' not Found in model.'.
+			self logCr: '[Jacoco] Info: Class covered: ' , name , ' not Found in model.'.
 			NotFound signalFor: name ]
 ]
 
@@ -199,6 +196,11 @@ JacocoImport >> importXML: aXMLDocument [
 { #category : #accessing }
 JacocoImport >> length [
 	^ self coverageXmlfolder asFileReference allFiles size
+]
+
+{ #category : #'as yet unclassified' }
+JacocoImport >> logCr: aString [
+	
 ]
 
 { #category : #parsing }
