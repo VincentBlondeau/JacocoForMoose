@@ -11,6 +11,31 @@ FAMIXMethod >> allIncomingInvocations [
 ]
 
 { #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> allIncomingInvocationsWithInterfacesCalls [
+	^ self
+		deepCollect:
+			[ :entity | 
+			(entity incomingInvocations
+				collect:
+					[ :inv | 
+					| from |
+					from := inv from.
+					from isImplementing
+						ifFalse: [ {from} ]
+						ifTrue:
+							[ 
+							| coll |
+						
+							coll := OrderedCollection new.
+							coll
+								add: from;
+								addAll: from implementMethod;
+								addAll:
+									"("from implementMethod "collect: #allIncomingInvocationsWithInterfacesCalls) flatten";
+								yourself ] ]) flatten ]
+]
+
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allOutgoingInvocations [
 	^ self deepCollect: [ :entity | entity outgoingInvocations collect: [ :inv | inv to ] ]
 ]
@@ -155,4 +180,14 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
 				thenSelect: #isNotNil ]) select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses [
+
+"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
+
+"self implementMethod collect: #allIncomingInvocations.
+	self haltIf: [ self accesses isNotEmpty ]."
+	^ self allIncomingInvocationsWithInterfacesCalls select: #isCoveringJacocoMethods
 ]

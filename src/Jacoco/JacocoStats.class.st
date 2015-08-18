@@ -2,32 +2,10 @@ Class {
 	#name : #JacocoStats,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'testClass',
 		'index'
 	],
 	#category : #Jacoco
 }
-
-{ #category : #stats }
-JacocoStats >> calculateInfinitestStatsOn: method [
-	| positives realData tp fn fp |
-	positives := method staticlyFoundInfinitestTestMethodsCallingMyself.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	realData := (method coveredByJacocoTestMethods select: [:m | m isNotIgnoredTest ]) asOrderedCollection.
-	tp := positives intersection: realData.
-	fn := realData difference: positives.
-	fp := positives difference: realData.
-	"tn := (all difference: realData) difference: positives."
-	"nom - couverte - tp & cie"
-	^ {(#mooseName -> method mooseName).
-	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
-	(#tp -> tp).
-	(#fn -> fn).
-	(#fp -> fp).
-	(#positives -> positives).
-	(#jacoco -> realData)	".
-	(#tn -> tn)"} asDictionary
-]
 
 { #category : #stats }
 JacocoStats >> calculatePrecisionMeanOn: res [
@@ -68,15 +46,13 @@ JacocoStats >> calculateRecallOn: aDictionary [
 ]
 
 { #category : #stats }
-JacocoStats >> calculateStaticStatsOn: method [
-	| positives all realData tp fn fp tn |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyself.
-	all := method staticlyFoundAnyTestMethodsCallingMyself.
-	realData := method coveredByJacocoTestMethods asMooseGroup selectNotIgnoredTests asOrderedCollection.
+JacocoStats >> createDictionaryForMethod: method FromPostives: positives realData: realData all: all [
+	"All is set at nil because it is not needed for the experiement"
+	| tp fn fp |
 	tp := positives intersection: realData.
 	fn := realData difference: positives.
 	fp := positives difference: realData.
-	tn := (all difference: realData) difference: positives.
+	"tn := (all difference: realData) difference: positives."
 	"nom - couverte - tp & cie"
 	^ {(#mooseName -> method mooseName).
 	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
@@ -84,41 +60,49 @@ JacocoStats >> calculateStaticStatsOn: method [
 	(#fn -> fn).
 	(#fp -> fp).
 	(#positives -> positives).
-	(#jacoco -> realData)} asDictionary
+	(#jacoco -> realData)	".
+	(#tn -> tn)"} asDictionary
 ]
 
-{ #category : #'as yet unclassified' }
-JacocoStats >> calculateStatsOn: methods [
-	| positives all realData tp fn fp tn |
-	positives := methods staticlyFoundJacocoTestMethodsCallingMyself.
-	all := methods staticlyFoundAnyTestMethodsCallingMyself.
-	realData := methods coveredByJacocoTestMethods asMooseGroup selectNotIgnoredTests asOrderedCollection.	" flatCollect: [ :c | c methods select: [ :m2 | m2 isTest and: [ m2 isIgnored not ] ] ]"
-	tp := positives intersection: realData.
-	fn := realData difference: positives.
-	fp := positives difference: realData.
-	tn := (all difference: realData) difference: positives.
-	"nom - couverte - tp & cie"
-	^ {(#mooseName -> methods mooseName).
-	(#isCoveredByJacocoTestMethods -> methods isCoveredByJacocoTestMethods).
-	(#tp -> tp).
-	(#fn -> fn).
-	(#fp -> fp).
-	(#tn -> tn)} asDictionary
-	"stream cr.
-			{tp size.
-			fn size.
-			fp size.
-			tn size.
-			positives.
-			(tp size + fp size = 0
-				ifTrue: [ nil ]
-				ifFalse: [ tp size / (tp size + fp size) ]).
-			(tp size + fn size = 0
-				ifTrue: [ nil ]
-				ifFalse: [ tp size / (tp size + fn size) ])} "
+{ #category : #stats }
+JacocoStats >> makeInfinitestStatsOn: method [
+	| positives realData    |
+	positives := method staticlyFoundInfinitestTestMethodsCallingMyself.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	^ self
+		createDictionaryForMethod: method
+		FromPostives: positives
+		realData: realData
+		all: nil
 ]
 
-{ #category : #'grammar-character' }
+{ #category : #stats }
+JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
+	| positives realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses.
+	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	^ self
+		createDictionaryForMethod: method
+		FromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #stats }
+JacocoStats >> makeStaticStatsOn: method [
+	| positives all realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyself.
+	all := method staticlyFoundAnyTestMethodsCallingMyself.
+	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	^ self
+		createDictionaryForMethod: method
+		FromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #deprecated }
 JacocoStats >> misc [
 	| tp fn tn fp positives all realData stream coveredMethods res total precision recall |
 	"Some code to export jacoco data to csv"
@@ -174,7 +158,7 @@ coveringTests := (model allMethods select: #isCoveringMethods).
 	self asOrderedCollection select: [ :class | class sourceAnchor fileName beginsWith: './wlp-product-test' ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #deprecated }
 JacocoStats >> misc1 [
 	"Some code to export jacoco data to csv"
 	"model := MooseModel root first.
@@ -228,7 +212,7 @@ recall :=  total first / (total first + total second).
 self asOrderedCollection select: [ :class | class  sourceAnchor fileName beginsWith: './wlp-product-test' ].
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #deprecated }
 JacocoStats >> shouldHalt [
 	index ifNil: [ index := 0 ].
 	self crLog: index.
@@ -238,41 +222,41 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	| res precisionMean recallMean return temp |
-	"coveredMethods := aMooseModel allModelMethodsCoveredByJacocoTestCases.
-	coveringTestsMethods := aMooseModel testsMethodsCoveringJacocoMethods."
-	res := (aMooseModel allModelMethods reject: #isStub)
-		collect: [ :m | self calculateStaticStatsOn: m ].
-	precisionMean := self calculatePrecisionMeanOn: res.
-	recallMean := self calculateRecallMeanOn: res.
-	return := #jacocoVSStatic
-		->
-			{(#recall -> recallMean).
-			(#precision -> precisionMean).
-			(#data -> res)} asDictionary.
-	temp := aMooseModel allModelMethods reject: #isStub.
-	res := temp collect: [ :m | self calculateInfinitestStatsOn: m ].
-	"self shouldHalt."
-	"self shouldHalt."
+	^ {(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeInfinitestStatsOn:
+		dicoEntry: #jacocoVSInfinitest).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn:
+		dicoEntry: #jacocoVSStaticWithAll)}
+]
 
-	"bag := res collect: [ :i | i at: #isCoveredByJacocoTestMethods ] as: Bag."
+{ #category : #stats }
+JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
+	| precisionMean recallMean res |
+	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self perform: aMethodSelector with: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
-	^ {return.
-	(#jacocoVSInfinitest
+	^ dicoEntry
 		->
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
-			(#data -> res)} asDictionary)}
-	"	(res collect: #sixth) asOrderedCollection average asFloat.
-	(res collect: #seventh) asOrderedCollection average asFloat.
-	total := res asOrderedCollection reduce: [ :a :b | (a first: 4) + (b first: 4) ].
-	precision := total first / (total first + total third).
-	recall := total first / (total first + total second).
-	{precision asFloat.
-	recall asFloat}
-"	"(coveredMethods collect: [ :m | m staticlyFoundJacocoTestMethodsCallingMyself ]) flatten.
-	self asOrderedCollection select: [ :class | class sourceAnchor fileName beginsWith: './wlp-product-test' ]"
+			(#data -> res)} asDictionary
+]
+
+{ #category : #stats }
+JacocoStats >> statsStaticCallAndAccessAndInheritanceOn: aMooseModel [
+	| precisionMean recallMean res |
+	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self calculateStaticCallAndAccessAndInheritanceStatsOn: m ].
+	precisionMean := self calculatePrecisionMeanOn: res.
+	recallMean := self calculateRecallMeanOn: res.
+	^ #jacocoVSStatic
+		->
+			{(#recall -> recallMean).
+			(#precision -> precisionMean).
+			(#data -> res)} asDictionary
 ]
 
 { #category : #accessing }
