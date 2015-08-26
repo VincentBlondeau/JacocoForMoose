@@ -119,9 +119,7 @@ FAMIXMethod >> isIgnored [
 	<derived>
 	<MSEComment:
 		'If the method is a test, it can be annotated with Ignore, the test is Bypassed'>
-	^ "self privateState
-		attributeAt: #isIgnored
-		ifAbsentPut: [ "self isAnnotatedWith: 'Ignore' "]"
+	^ (self isAnnotatedWith: 'Ignore') or: [ self belongsTo isIgnored ]
 ]
 
 { #category : #'*Jacoco-Import tests' }
@@ -184,10 +182,18 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses [
+	"self implementMethod collect: #allIncomingInvocations."
 
-"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
-
-"self implementMethod collect: #allIncomingInvocations.
-	self haltIf: [ self accesses isNotEmpty ]."
-	^ self allIncomingInvocationsWithInterfacesCalls select: #isCoveringJacocoMethods
+"	| res |
+	res := Set new.
+	res
+		addAll:
+			((self accesses flatCollect: [ :access | access to incomingAccesses collect: #from ])
+				flatten
+				flatCollect:
+					[ :meth | meth allIncomingInvocationsWithInterfacesCalls selectAsSet: #isCoveringJacocoMethods ]).
+	res
+		addAll:"
+		^ 	(self allIncomingInvocationsWithInterfacesCalls selectAsSet: #isCoveringJacocoMethods).
+	"^ res"
 ]

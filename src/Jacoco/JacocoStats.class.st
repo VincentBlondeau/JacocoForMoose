@@ -2,10 +2,27 @@ Class {
 	#name : #JacocoStats,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'index'
+		'index',
+		'cacheNumberOfNotIgnoredTestMethods'
 	],
 	#category : #Jacoco
 }
+
+{ #category : #stats }
+JacocoStats >> calculateGainDataOn: res [
+	| elements |
+	elements := res collect: [ :e | self calculateGainOn: e ] thenReject: #isNil.
+	^ elements asOrderedCollection average
+]
+
+{ #category : #stats }
+JacocoStats >> calculateGainOn: aDictionary [
+	| positives allTests |
+	allTests := self numberOfNotIgnoredTestMethods.
+	positives := aDictionary at: #positives.
+	Halt if: [positives isNotEmpty].
+	^ 1 - (positives size asFloat / allTests asFloat)
+]
 
 { #category : #stats }
 JacocoStats >> calculatePrecisionMeanOn: res [
@@ -212,6 +229,15 @@ recall :=  total first / (total first + total second).
 self asOrderedCollection select: [ :class | class  sourceAnchor fileName beginsWith: './wlp-product-test' ].
 ]
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> numberOfNotIgnoredTestMethods [
+	^ cacheNumberOfNotIgnoredTestMethods
+		ifNil:
+			[ 
+			cacheNumberOfNotIgnoredTestMethods := model allNotIgnoredTestMethods
+				size ]
+]
+
 { #category : #deprecated }
 JacocoStats >> shouldHalt [
 	index ifNil: [ index := 0 ].
@@ -222,28 +248,25 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
+	model := aMooseModel .
 	^ {(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeInfinitestStatsOn:
-		dicoEntry: #jacocoVSInfinitest).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn:
-		dicoEntry: #jacocoVSStaticWithAll)}
+	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)}
 ]
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean res |
+	| precisionMean recallMean res gainData |
 	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self perform: aMethodSelector with: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
+	gainData := self calculateGainDataOn: res.
 	^ dicoEntry
 		->
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
-			(#data -> res)} asDictionary
+			(#data -> res).
+			(#gain -> gainData)} asDictionary
 ]
 
 { #category : #stats }
