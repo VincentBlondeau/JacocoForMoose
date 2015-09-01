@@ -1,4 +1,6 @@
 "
+MooseModel resetMeta.
+
 model := MooseModel new.
 model importFromMSEStream: (StandardFileStream readOnlyFileNamed: 'artifacts/model.mse').
 model install.
@@ -8,13 +10,6 @@ InfinitestImport  runOn: model.
 
 
 JacocoStats new statsOn: model.
-
-process := nil.
-[ 
-MessageTally terminateTimerProcess.
-process := [JacocoStats new statsOn: model.] fork.
-TimeProfiler spyOnProcess: process forMilliseconds: 2000.
- ] ensure: [process terminate.]
 
 Please comment me using the following template inspired by Class Responsibility Collaborator (CRC) design:
 
@@ -35,7 +30,6 @@ Public API and Key Messages
 Internal Representation and Key Implementation Points.
 
     Instance Variables
-	cacheNumberOfNotIgnoredTestMethods:		<Object>
 	index:		<Object>
 
 
@@ -45,29 +39,37 @@ Class {
 	#name : #JacocoStats,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'index',
-		'cacheNumberOfNotIgnoredTestMethods'
+		'index'
 	],
 	#category : #Jacoco
 }
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculateGainDataOn: res [
-	| elements |
+	| elements numberOfTests avgWithoutZeros gainWithoutZeros gainWithZeros avgWithZeros numberOfZeros |
+	numberOfTests := self numberOfTestsMethodsFromModel: model.
 	elements := res collect: [ :e | self calculateGainOn: e ] thenReject: #isNil.
-	^ elements asOrderedCollection average
+	avgWithoutZeros := (elements asOrderedCollection
+		removeAllSuchThat: [ :f | f closeTo: 0.0 ];
+		yourself) average.
+	gainWithoutZeros := avgWithoutZeros / numberOfTests.
+	gainWithZeros := elements average / numberOfTests.
+	avgWithZeros := elements average.
+	numberOfZeros := elements asOrderedCollection occurrencesOf: 0.
+	^ {elements asBag.
+	{(#avgWithoutZeros -> avgWithoutZeros).
+	(#gainWithoutZeros -> gainWithoutZeros).
+	(#gainWithZeros -> gainWithZeros).
+	(#avgWithZeros -> avgWithZeros).
+	(#numberOfZeros -> numberOfZeros)} asDictionary}
 ]
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculateGainOn: aDictionary [
-	| positives allTests |
-	allTests := self numberOfNotIgnoredTestMethods.
-	positives := aDictionary at: #positives.
-	Halt if: [positives isNotEmpty].
-	^ 1 - (positives size asFloat / allTests asFloat)
+	^ (aDictionary at: #positives) size asFloat
 ]
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculatePrecisionMeanOn: res [
 	| elements |
 	elements := res
@@ -76,7 +78,7 @@ JacocoStats >> calculatePrecisionMeanOn: res [
 	^ elements asOrderedCollection average
 ]
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculatePrecisionOn: aDictionary [
 	| tp fp |
 	tp := aDictionary at: #tp.
@@ -86,7 +88,7 @@ JacocoStats >> calculatePrecisionOn: aDictionary [
 		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ]
 ]
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculateRecallMeanOn: res [
 		| elements |
 	elements := res
@@ -95,7 +97,7 @@ JacocoStats >> calculateRecallMeanOn: res [
 	^ elements asOrderedCollection average
 ]
 
-{ #category : #stats }
+{ #category : #'metrics calculus' }
 JacocoStats >> calculateRecallOn: aDictionary [
 	| tp fn |
 	tp := aDictionary at: #tp.
@@ -105,16 +107,18 @@ JacocoStats >> calculateRecallOn: aDictionary [
 		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ]
 ]
 
-{ #category : #stats }
-JacocoStats >> createDictionaryForMethod: method FromPostives: positives realData: realData all: all [
+{ #category : #'stats - making' }
+JacocoStats >> createDictionaryForMethod: method fromPostives: positives realData: realData all: all [
 	"All is set at nil because it is not needed for the experiement"
+
 	| tp fn fp |
 	tp := positives intersection: realData.
 	fn := realData difference: positives.
 	fp := positives difference: realData.
 	"tn := (all difference: realData) difference: positives."
 	"nom - couverte - tp & cie"
-	^ {(#mooseName -> method mooseName).
+	^ {#method -> method.
+	(#mooseName -> method mooseName).
 	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
 	(#tp -> tp).
 	(#fn -> fn).
@@ -124,164 +128,84 @@ JacocoStats >> createDictionaryForMethod: method FromPostives: positives realDat
 	(#tn -> tn)"} asDictionary
 ]
 
-{ #category : #stats }
+{ #category : #'stats - making' }
 JacocoStats >> makeInfinitestStatsOn: method [
-	| positives realData    |
-	positives := method staticlyFoundInfinitestTestMethodsCallingMyself.
+	| positives realData |
+	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: method staticlyFoundInfinitestTestMethodsCallingMyself.
 	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	realData := self selectMethodsCovering: method.
 	^ self
 		createDictionaryForMethod: method
-		FromPostives: positives
+		fromPostives: positives
 		realData: realData
 		all: nil
 ]
 
-{ #category : #stats }
+{ #category : #'stats - making' }
 JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
 	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses.
-	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: method staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses.
+	realData := self selectMethodsCovering: method.
 	^ self
 		createDictionaryForMethod: method
-		FromPostives: positives
+		fromPostives: positives
 		realData: realData
 		all: nil
 ]
 
-{ #category : #stats }
+{ #category : #'stats - making' }
 JacocoStats >> makeStaticStatsOn: method [
-	| positives all realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyself.
-	all := method staticlyFoundAnyTestMethodsCallingMyself.
-	realData := (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection.
+	| positives realData |
+	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection:method staticlyFoundJacocoTestMethodsCallingMyself.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	realData := self selectMethodsCovering: method.
 	^ self
 		createDictionaryForMethod: method
-		FromPostives: positives
+		fromPostives: positives
 		realData: realData
 		all: nil
 ]
 
-{ #category : #deprecated }
-JacocoStats >> misc [
-	| tp fn tn fp positives all realData stream coveredMethods res total precision recall |
-	"Some code to export jacoco data to csv"
-	"model := MooseModel root first.
-JacocoImport runOn: model."
-	"coveredMethods := (model allMethods select: #isCoveredByTestClasses).
-coveringTests := (model allMethods select: #isCoveringMethods).
-
-(coveredMethods collect: [ :m | m isCallingCoveredTestsClasses ] ) asBag."
-	stream := 'export.csv' asFileReference writeStream.
-	res := coveredMethods
-		reject:
+{ #category : #accessing }
+JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
+	^ ((aMooseModel allModelMethods reject: [ :e | e isStub ])
+		select:
 			[ :m | 
-			(m isStub or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::AbstractTest' ])
-				or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::RootAbstractTest' ] ].
-	res := (model allModelMethods reject: #isStub)
-		collect:
+			(m sourceAnchor
+				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/test' ]
+				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) size
+]
+
+{ #category : #'stats - making' }
+JacocoStats >> removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: aCollection [
+	^ aCollection removeAllSuchThat: [ :i | i name = 'testGetterSetter' ]
+]
+
+{ #category : #accessing }
+JacocoStats >> selectMethodsCovering: method [
+	^ self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection
+]
+
+{ #category : #accessing }
+JacocoStats >> selectMethodsFromModel: aMooseModel [
+	| toRemove |
+	toRemove := aMooseModel
+		entityNamed:
+			'net::atos::wlp::cms::core::commons::CodeCoverageEnhancerTestCase.testGetterSetter()'.
+	^ (aMooseModel allModelMethods reject: [ :e | e isStub ])
+		select:
 			[ :m | 
-			positives := m staticlyFoundJacocoTestMethodsCallingMyself.
-			all := m staticlyFoundAnyTestMethodsCallingMyself.
-			realData := m coveredByJacocoTestMethods flatCollect: [ :c | c methods select: [ :m2 | m2 isTest and: [ m2 isIgnored not ] ] ].
-			tp := positives intersection: realData.
-			fn := realData difference: positives.
-			fp := positives difference: realData.
-			tn := (all difference: realData) difference: positives.
-			"nom - couverte - tp & cie"
-			stream
-				<<
-					(m mooseName , ';' , m isCoveredByJacocoTestMethods asString , ';' , tp size asString , ';' , fn size asString , ';' , fp size asString
-						, ';' , tn size asString).
-			stream cr.
-			{tp size.
-			fn size.
-			fp size.
-			tn size.
-			positives.
-			(tp size + fp size = 0
-				ifTrue: [ nil ]
-				ifFalse: [ tp size / (tp size + fp size) ]).
-			(tp size + fn size = 0
-				ifTrue: [ nil ]
-				ifFalse: [ tp size / (tp size + fn size) ])} ].
-	stream close.
-	res asOrderedCollection.
-	(res collect: #sixth) asOrderedCollection average asFloat.
-	(res collect: #seventh) asOrderedCollection average asFloat.
-	total := res asOrderedCollection reduce: [ :a :b | (a first: 4) + (b first: 4) ].
-	precision := total first / (total first + total third).
-	recall := total first / (total first + total second).
-	{precision asFloat.
-	recall asFloat}.
-	(coveredMethods collect: [ :m | m staticlyFoundJacocoTestMethodsCallingMyself ]) flatten.
-	self asOrderedCollection select: [ :class | class sourceAnchor fileName beginsWith: './wlp-product-test' ]
+			(m sourceAnchor
+				ifNil:
+					[ 
+					m belongsTo sourceAnchor fileName
+						beginsWith: './wlp-cms-core/src/main' ]
+				ifNotNil:
+					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ])
+				and: [ m isCoveredByJacocoTestMethodsWithout: {toRemove} ] ]
 ]
 
-{ #category : #deprecated }
-JacocoStats >> misc1 [
-	"Some code to export jacoco data to csv"
-	"model := MooseModel root first.
-JacocoImport runOn: model."
-
-"coveredMethods := (model allMethods select: #isCoveredByTestClasses).
-coveringTests := (model allMethods select: #isCoveringMethods).
-
-(coveredMethods collect: [ :m | m isCallingCoveredTestsClasses ] ) asBag."
-|tp fn tn fp positives all realData stream coveredMethods res total precision recall |
-
-stream := 'export.csv' asFileReference writeStream.
-res := (coveredMethods reject: [:m | (m isStub or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::AbstractTest']) or: [ m belongsTo mooseName = 'net::atos::wlp::cedicam::RootAbstractTest'  ] ]).
-res := 	((model allModelMethods  reject: #isStub )collect: [ :m | 
-	
-	positives := m staticlyFoundJacocoTestMethodsCallingMyself.
-	all := m staticlyFoundAnyTestMethodsCallingMyself.
-	realData := m coveredByJacocoTestMethods flatCollect: [ :c | c methods select: [:m2 | m2 isTest and: [ m2 isIgnored not ] ]].
-	
-	tp := positives intersection: realData.
-	fn := realData difference: positives.
-	fp := positives difference: realData.
-	tn := (all difference: realData ) difference: positives .
-	"nom - couverte - tp & cie"
-
-	stream << (m mooseName, ';', m isCoveredByJacocoTestMethods asString, ';', tp size asString, ';', fn size asString, ';',fp size asString, ';', tn size asString).
-	stream cr.
-		
-	{  tp size . fn size . fp size. tn size . positives . (tp size  + fp size) = 0  ifTrue:[nil] ifFalse: [tp size / (tp size +  fp size)].(tp size  + fn size) = 0 ifTrue:[nil] ifFalse: [tp size / (tp size +  fn size)]}
-	 ] ) .
-stream close.
-
-
-res asOrderedCollection.
-(res collect: #sixth) asOrderedCollection average asFloat. 
-(res collect: #seventh)asOrderedCollection  average asFloat.
-total := res asOrderedCollection reduce: [ :a :b | (a first: 4) + (b first:4) ] .
-precision := total first / (total first + total third).
-recall :=  total first / (total first + total second). 
-{precision asFloat . recall asFloat }.
-
-(coveredMethods collect: [ :m | m staticlyFoundJacocoTestMethodsCallingMyself  ] ) flatten.
-
-
-
-
-
-
-
-
-self asOrderedCollection select: [ :class | class  sourceAnchor fileName beginsWith: './wlp-product-test' ].
-]
-
-{ #category : #'as yet unclassified' }
-JacocoStats >> numberOfNotIgnoredTestMethods [
-	^ cacheNumberOfNotIgnoredTestMethods
-		ifNil:
-			[ 
-			cacheNumberOfNotIgnoredTestMethods := model allNotIgnoredTestMethods
-				size ]
-]
-
-{ #category : #deprecated }
+{ #category : #halting }
 JacocoStats >> shouldHalt [
 	index ifNil: [ index := 0 ].
 	self crLog: index.
@@ -291,16 +215,17 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	model := aMooseModel .
+	model := aMooseModel.
 	^ {(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
 	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
-	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)}
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)} asDictionary
 ]
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean res gainData |
-	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self perform: aMethodSelector with: m ].
+	| precisionMean recallMean res methods gainData |
+	methods := self selectMethodsFromModel: aMooseModel.
+	res := methods collect: [ :m | self perform: aMethodSelector with: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
 	gainData := self calculateGainDataOn: res.
@@ -309,23 +234,6 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
 			(#data -> res).
-			(#gain -> gainData)} asDictionary
-]
-
-{ #category : #stats }
-JacocoStats >> statsStaticCallAndAccessAndInheritanceOn: aMooseModel [
-	| precisionMean recallMean res |
-	res := (aMooseModel allModelMethods reject: #isStub) collect: [ :m | self calculateStaticCallAndAccessAndInheritanceStatsOn: m ].
-	precisionMean := self calculatePrecisionMeanOn: res.
-	recallMean := self calculateRecallMeanOn: res.
-	^ #jacocoVSStatic
-		->
-			{(#recall -> recallMean).
-			(#precision -> precisionMean).
-			(#data -> res)} asDictionary
-]
-
-{ #category : #accessing }
-JacocoStats >> stream [
-	^ 'export.csv' asFileReference writeStream
+			(#gainData -> gainData first).
+			#gain -> gainData second} asDictionary
 ]

@@ -105,6 +105,13 @@ FAMIXMethod >> isCoveredByJacocoTestMethods [
 ]
 
 { #category : #'*Jacoco-Import' }
+FAMIXMethod >> isCoveredByJacocoTestMethodsWithout: someTestsMethods [
+	^ (self coveredByJacocoTestMethods asOrderedCollection
+		removeAllFoundIn: someTestsMethods;
+		yourself) isNotEmpty
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXMethod >> isCoveringJacocoMethods [
 	<MSEProperty: #isCoveringJacocoMethods type: #Boolean>
 	<multivalued>
@@ -119,7 +126,9 @@ FAMIXMethod >> isIgnored [
 	<derived>
 	<MSEComment:
 		'If the method is a test, it can be annotated with Ignore, the test is Bypassed'>
-	^ (self isAnnotatedWith: 'Ignore') or: [ self belongsTo isIgnored ]
+	^ "self privateState
+		attributeAt: #isIgnored
+		ifAbsentPut: [ "self isAnnotatedWith: 'Ignore' "]"
 ]
 
 { #category : #'*Jacoco-Import tests' }
@@ -156,6 +165,19 @@ FAMIXMethod >> matchWithJacocoDescription: aJacocoDescription [
 	^ return
 ]
 
+{ #category : #'*Jacoco-Import temp to migrate to moose' }
+FAMIXMethod >> overridedMethods [
+	<MSEProperty: #overridedMethods type: #FAMIXMethod>
+	<derived>
+	<MSEComment:
+		'The methods that are overrided by this method. I.e. the methods of the superclasses'>
+	self flag: 'Add a test!'.
+	^ (self belongsTo directSuperclasses
+		select:
+			[ :each | each isInterface not and: [ each understands: self signature ] ]
+		thenCollect: [ :each | each methodsUnderstanding: self signature ]) flatten
+]
+
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundAnyTestMethodsCallingMyself [
 	^ (self
@@ -170,30 +192,22 @@ FAMIXMethod >> staticlyFoundAnyTestMethodsCallingMyself [
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
-	^ (self
+	^ ((self
 		deepCollect: [ :entity | 
 			entity incomingInvocations
 				collect: [ :inv | 
 					inv from	"isStub
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
-				thenSelect: #isNotNil ]) select: #isCoveringJacocoMethods
+				thenSelect: #isNotNil ]), { self } ) select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses [
-	"self implementMethod collect: #allIncomingInvocations."
 
-"	| res |
-	res := Set new.
-	res
-		addAll:
-			((self accesses flatCollect: [ :access | access to incomingAccesses collect: #from ])
-				flatten
-				flatCollect:
-					[ :meth | meth allIncomingInvocationsWithInterfacesCalls selectAsSet: #isCoveringJacocoMethods ]).
-	res
-		addAll:"
-		^ 	(self allIncomingInvocationsWithInterfacesCalls selectAsSet: #isCoveringJacocoMethods).
-	"^ res"
+"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
+
+"self implementMethod collect: #allIncomingInvocations.
+	self haltIf: [ self accesses isNotEmpty ]."
+	^ (self allIncomingInvocationsWithInterfacesCalls, {self}) select: #isCoveringJacocoMethods
 ]
