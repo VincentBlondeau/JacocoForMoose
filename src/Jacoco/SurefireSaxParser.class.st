@@ -1,33 +1,64 @@
+"
+The maven surefire parser of test results
+"
 Class {
 	#name : #SurefireSaxParser,
 	#superclass : #SAXHandler,
 	#instVars : [
-		'result'
+		'result',
+		'testCase'
 	],
-	#category : #'Jacoco-Surefire'
+	#category : #'Surefire-Core'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : #'handling - content' }
+SurefireSaxParser >> endElement: aQualifiedName [
+	aQualifiedName = 'testcase'
+		ifTrue: [ result add: testCase ]
+]
+
+{ #category : #parsing }
 SurefireSaxParser >> parsingResult [
 	^ result
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #converter }
+SurefireSaxParser >> reduceData: aDictionary withScheme: aScheme [
+	^ (aScheme
+		pairsCollect:
+			[ :entry :key | 
+			entry
+				->
+					([ (aDictionary at: key) asNumber ]
+						on: Error
+						do:
+							[ :ex | 
+							ex messageText
+								=
+									'Reading a number failed: a digit between 0 and 9 expected'
+								ifTrue: [ aDictionary at: key ]
+								ifFalse: [ ex resume ] ]) ]) asDictionary
+]
+
+{ #category : #'handling - content' }
 SurefireSaxParser >> startDocument [
 	result := OrderedCollection new
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'handling - content' }
 SurefireSaxParser >> startElement: aQualifiedName attributes: aDictionary [
-	| className |
-	aQualifiedName = 'class'
-		ifTrue: [ className := aDictionary at: 'name' ].
-	aQualifiedName = 'method'
+	"	aQualifiedName = 'testsuite'
 		ifTrue:
 			[ 
-			result
-				add:
-					{(#className -> className).
-					(#methodName -> (aDictionary at: 'name')).
-					(#methodSignature -> (aDictionary at: 'desc'))} asDictionary ]
+			testCaseProperties := self
+				reduceData: aDictionary
+				withScheme:
+					#(#nbFailure #failures #time #time #nbErrors #errors #nbSkipped #skipped #nbTests #tests #testSuiteName #name) ]."
+
+	aQualifiedName = 'testcase'
+		ifTrue: [ 
+			testCase := self reduceData: aDictionary withScheme: #(#time #time #testSuiteName classname #testCaseName #name ).
+			testCase at: #status put: 'pass' ].
+	(#('error' 'skipped' 'failure') includes: aQualifiedName)
+		ifTrue: [ testCase at: #status put: aQualifiedName ]
 ]

@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'testClass'
 	],
-	#category : #'Jacoco-Infinitest'
+	#category : #'Infinitest-Core'
 }
 
 { #category : #'as yet unclassified' }

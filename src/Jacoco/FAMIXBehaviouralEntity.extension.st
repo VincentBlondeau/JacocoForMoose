@@ -14,9 +14,3 @@ FAMIXBehaviouralEntity >> numberOfArgsFromSignature [
 	
 	^ args size - (cut second occurrencesOf: $<)
 ]
-
-{ #category : #'*Jacoco-Infinitest' }
-FAMIXBehaviouralEntity >> staticlyFoundInfinitestTestMethodsCallingMyself [
-	^ (self belongsTo coveredByInfinitestTests collect: [ :e | e testMethods ])
-		flatten
-]

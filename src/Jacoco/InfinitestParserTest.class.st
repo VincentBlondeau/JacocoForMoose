@@ -1,7 +1,7 @@
 Class {
 	#name : #InfinitestParserTest,
 	#superclass : #PPCompositeParserTest,
-	#category : #Jacoco
+	#category : #'Infinitest-Tests'
 }
 
 { #category : #accessing }

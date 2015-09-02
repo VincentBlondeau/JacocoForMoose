@@ -8,7 +8,7 @@ Class {
 		'dependency',
 		'javaDependencies'
 	],
-	#category : #'Jacoco-Infinitest'
+	#category : #'Infinitest-Core'
 }
 
 { #category : #'as yet unclassified' }

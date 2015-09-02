@@ -1,15 +1,24 @@
 Class {
 	#name : #SurefireParserTest,
 	#superclass : #TestCase,
-	#category : #'Jacoco-Surefire'
+	#category : #'Surefire-Tests'
 }
 
 { #category : #'as yet unclassified' }
 SurefireParserTest >> testSurefireXmlParsing [
-	| result |
+	| result status |
 	result := SurefireSaxParser parse: self xmlResource.
-	self assert: result size equals: 4
-	
+	self assert: result size equals: 4.
+	status := result collect: [ :e | e at: #status ].
+	self assert: (status includes: 'pass').
+	self assert: (status includes: 'error').
+	self assert: (status includes: 'failure').
+	self assert: (result allSatisfy: [ :e | (e at: #time) = 1.1 ]).
+	self
+		assert:
+			(result
+				allSatisfy:
+					[ :e | (e at: #testCaseName) beginsWith: 'testCompleteTechnologyModel' ])
 ]
 
 { #category : #'as yet unclassified' }
@@ -24,7 +33,7 @@ SurefireParserTest >> xmlResource [
 	</properties>
 	<testcase time="1.100"
 		classname="myproject.application.ApplicationModelManagerTestCase"
-		name="testCreateTechnologyModel31" />
+		name="testCompleteTechnologyModel31" />
 	<testcase time="1.100"
 		classname="myproject.application.ApplicationModelManagerTestCase"
 		name="testCompleteTechnologyModel01">

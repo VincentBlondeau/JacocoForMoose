@@ -1,7 +1,7 @@
 Class {
 	#name : #InfinitestResolver,
 	#superclass : #InfinitestParser,
-	#category : #'Jacoco-Infinitest'
+	#category : #'Infinitest-Core'
 }
 
 { #category : #accessing }
