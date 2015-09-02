@@ -114,6 +114,7 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
+		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
 		spec project: 'Moose' with: [
 				spec
 					className: #ConfigurationOfMoose;
@@ -122,10 +123,10 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 		spec 
 			package: #Infinitest with: [
 				spec requires: #('Moose' ). ];
-			package: #Jacoco with: [
-				spec requires: #(#'Surefire-Core' 'Moose' #Infinitest ). ];
 			package: #'Surefire-Core' with: [
 				spec requires: #('Moose' ). ];
+			package: #Jacoco with: [
+				spec requires: #(#'Surefire-Core' 'Moose' #Infinitest ). ];
 			package: #'Surefire-Tests' with: [
 				spec requires: #(#'Surefire-Core' ). ]. ].
 
