@@ -39,10 +39,16 @@ Class {
 	#name : #JacocoStats,
 	#superclass : #MooseOperator,
 	#instVars : [
-		'index'
+		'index',
+		'testGetterSetter'
 	],
 	#category : #Jacoco
 }
+
+{ #category : #stats }
+JacocoStats >> basicRun [
+	^ self statsOn: self model
+]
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculateGainDataOn: res [
@@ -52,8 +58,8 @@ JacocoStats >> calculateGainDataOn: res [
 	avgWithoutZeros := (elements asOrderedCollection
 		removeAllSuchThat: [ :f | f closeTo: 0.0 ];
 		yourself) average.
-	gainWithoutZeros := avgWithoutZeros / numberOfTests.
-	gainWithZeros := elements average / numberOfTests.
+	gainWithoutZeros := 1 - (avgWithoutZeros / numberOfTests).
+	gainWithZeros := 1 - (elements average / numberOfTests).
 	avgWithZeros := elements average.
 	numberOfZeros := elements asOrderedCollection occurrencesOf: 0.
 	^ {elements asBag.
@@ -117,21 +123,23 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	fp := positives difference: realData.
 	"tn := (all difference: realData) difference: positives."
 	"nom - couverte - tp & cie"
-	^ {#method -> method.
+	^ {(#method -> method).
 	(#mooseName -> method mooseName).
 	(#isCoveredByJacocoTestMethods -> method isCoveredByJacocoTestMethods).
 	(#tp -> tp).
 	(#fn -> fn).
 	(#fp -> fp).
 	(#positives -> positives).
-	(#jacoco -> realData)	".
+	(#jacoco -> realData)	.
+	(#greenTests -> (realData collect: #testStatus) )
+		".
 	(#tn -> tn)"} asDictionary
 ]
 
 { #category : #'stats - making' }
 JacocoStats >> makeInfinitestStatsOn: method [
 	| positives realData |
-	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: method staticlyFoundInfinitestTestMethodsCallingMyself.
+	positives := method staticlyFoundInfinitestTestMethodsCallingMyself reject: self toRemove.
 	"all := method staticlyFoundAnyTestMethodsCallingMyself."
 	realData := self selectMethodsCovering: method.
 	^ self
@@ -144,7 +152,9 @@ JacocoStats >> makeInfinitestStatsOn: method [
 { #category : #'stats - making' }
 JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
 	| positives realData |
-	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: method staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses.
+	positives := method
+		staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses
+		reject: self toRemove.
 	realData := self selectMethodsCovering: method.
 	^ self
 		createDictionaryForMethod: method
@@ -156,9 +166,10 @@ JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
 { #category : #'stats - making' }
 JacocoStats >> makeStaticStatsOn: method [
 	| positives realData |
-	positives := self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection:method staticlyFoundJacocoTestMethodsCallingMyself.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	positives := method staticlyFoundJacocoTestMethodsCallingMyself
+		reject: self toRemove.
 	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
 	^ self
 		createDictionaryForMethod: method
 		fromPostives: positives
@@ -168,7 +179,7 @@ JacocoStats >> makeStaticStatsOn: method [
 
 { #category : #accessing }
 JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
-	^ ((aMooseModel allModelMethods reject: [ :e | e isStub ])
+	^ ((self model allModelMethods reject: [ :e | e isStub ])
 		select:
 			[ :m | 
 			(m sourceAnchor
@@ -176,33 +187,21 @@ JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
 				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) size
 ]
 
-{ #category : #'stats - making' }
-JacocoStats >> removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: aCollection [
-	^ aCollection removeAllSuchThat: [ :i | i name = 'testGetterSetter' ]
-]
-
 { #category : #accessing }
 JacocoStats >> selectMethodsCovering: method [
-	^ self removeTheUselessMethodsThatSHOULDNotBeInTheCodeFromCollection: (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ]) asOrderedCollection
+	^ (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ])
+		reject: self toRemove
 ]
 
 { #category : #accessing }
 JacocoStats >> selectMethodsFromModel: aMooseModel [
-	| toRemove |
-	toRemove := aMooseModel
-		entityNamed:
-			'net::atos::wlp::cms::core::commons::CodeCoverageEnhancerTestCase.testGetterSetter()'.
 	^ (aMooseModel allModelMethods reject: [ :e | e isStub ])
 		select:
 			[ :m | 
 			(m sourceAnchor
-				ifNil:
-					[ 
-					m belongsTo sourceAnchor fileName
-						beginsWith: './wlp-cms-core/src/main' ]
-				ifNotNil:
-					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ])
-				and: [ m isCoveredByJacocoTestMethodsWithout: {toRemove} ] ]
+				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/main' ]
+				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ])
+				and: [ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ]
 ]
 
 { #category : #halting }
@@ -215,25 +214,47 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	model := aMooseModel.
-	^ {(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
-	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)} asDictionary
+	^ {(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)}
+		asDictionary
 ]
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean res methods gainData |
+	| precisionMean recallMean res methods gainData greenTests |
 	methods := self selectMethodsFromModel: aMooseModel.
-	res := methods collect: [ :m | self perform: aMethodSelector with: m ].
+	res := methods
+		collect: [ :m | self perform: aMethodSelector with: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
 	gainData := self calculateGainDataOn: res.
+	greenTests := res flatCollect: [ :e | e at: #greenTests ].
 	^ dicoEntry
 		->
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
 			(#data -> res).
 			(#gainData -> gainData first).
-			#gain -> gainData second} asDictionary
+			(#gain -> gainData second).
+			(#percentageOfGreenTests
+				->
+					((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)}
+				asDictionary
+]
+
+{ #category : #accessing }
+JacocoStats >> testGetterSetter [
+	^ testGetterSetter
+		ifNil:
+			[ 
+			testGetterSetter := self model
+				entityNamed: 'net::atos::wlp::cms::core::commons::CodeCoverageEnhancerTestCase.testGetterSetter()' ]
+]
+
+{ #category : #accessing }
+JacocoStats >> toRemove [
+	^ [ :e | 
+	e = self testGetterSetter
+		or: [ e testIsGreen not ] ]
 ]

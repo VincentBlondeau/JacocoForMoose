@@ -85,10 +85,8 @@ FAMIXMethod >> isCoveredByJacocoTestMethods [
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> isCoveredByJacocoTestMethodsWithout: someTestsMethods [
-	^ (self coveredByJacocoTestMethods asOrderedCollection
-		removeAllFoundIn: someTestsMethods;
-		yourself) isNotEmpty
+FAMIXMethod >> isCoveredByJacocoTestMethodsByRejecting: aBlock [
+	^ (self coveredByJacocoTestMethods reject: aBlock) isNotEmpty
 ]
 
 { #category : #'*Jacoco-Import' }
