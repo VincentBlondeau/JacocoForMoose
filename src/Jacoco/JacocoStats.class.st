@@ -164,6 +164,32 @@ JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
 ]
 
 { #category : #'stats - making' }
+JacocoStats >> makeStaticClassStatsOn: method [
+	| positives realData |
+	positives := method staticlyFoundByClassJacocoTestMethodsCallingMyself reject: self toRemove.
+	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	^ self
+		createDictionaryForMethod: method
+		fromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #'stats - making' }
+JacocoStats >> makeStaticInnerclassesStatsOn: method [
+	| positives realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses reject: self toRemove.
+	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	^ self
+		createDictionaryForMethod: method
+		fromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #'stats - making' }
 JacocoStats >> makeStaticStatsOn: method [
 	| positives realData |
 	positives := method staticlyFoundJacocoTestMethodsCallingMyself
@@ -179,12 +205,12 @@ JacocoStats >> makeStaticStatsOn: method [
 
 { #category : #accessing }
 JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
-	^ ((self model allModelMethods reject: [ :e | e isStub ])
+	^ (((self model allModelMethods reject: [ :e | e isStub ])
 		select:
 			[ :m | 
 			(m sourceAnchor
 				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/test' ]
-				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) size
+				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) reject: self toRemove) size
 ]
 
 { #category : #accessing }
@@ -214,10 +240,11 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	^ {(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	^ {"(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
 	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAll)}
-		asDictionary
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
+	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass)."
+	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner)} asDictionary
 ]
 
 { #category : #stats }
@@ -245,16 +272,10 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 
 { #category : #accessing }
 JacocoStats >> testGetterSetter [
-	^ testGetterSetter
-		ifNil:
-			[ 
-			testGetterSetter := self model
-				entityNamed: 'net::atos::wlp::cms::core::commons::CodeCoverageEnhancerTestCase.testGetterSetter()' ]
+	^ testGetterSetter ifNil: [ testGetterSetter := self model testGetterSetter ]
 ]
 
 { #category : #accessing }
 JacocoStats >> toRemove [
-	^ [ :e | 
-	e = self testGetterSetter
-		or: [ e testIsGreen not ] ]
+	^ [ :e | e = self model testGetterSetter or: [ e testIsGreen not ] ]
 ]

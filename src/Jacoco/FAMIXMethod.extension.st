@@ -11,8 +11,20 @@ FAMIXMethod >> allIncomingInvocations [
 ]
 
 { #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> allIncomingInvocationsWith: aSelector [
+	^ (self perform: aSelector)
+		deepCollect:
+			[ :entity | (entity incomingInvocations collect: [ :inv | inv from perform: aSelector ]) flatten ]
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> allIncomingInvocationsWithInnerclassDefiningMethods [
+	^ self allIncomingInvocationsWith: #withInnerclassDefiningMethods
+]
+
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allIncomingInvocationsWithInterfacesCalls [
-	^ self withImplementMethods deepCollect: [ :entity | (entity incomingInvocations collect: [ :inv | inv from withImplementMethods ]) flatten ]
+	^ self allIncomingInvocationsWith: #withImplementMethods
 ]
 
 { #category : #'*Jacoco-Import - static' }
@@ -169,6 +181,16 @@ FAMIXMethod >> staticlyFoundAnyTestMethodsCallingMyself [
 ]
 
 { #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundByClassJacocoTestMethodsCallingMyself [
+	^ ((self
+		deepCollect:
+			[ :entity | (entity queryMooseChefAllIncomingInvocations "FAMIXInvocation") atScope: FAMIXClass ])
+		flatCollect: [ :e | e methods ])
+		select: #isCoveringJacocoMethods
+	", {self}: not added because only the core is managed"
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
 	^ ((self
 		deepCollect: [ :entity | 
@@ -178,6 +200,11 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
 				thenSelect: #isNotNil ]), { self } ) select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses [
+	^ (self allIncomingInvocationsWithInnerclassDefiningMethods, {self}) select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
@@ -200,4 +227,21 @@ FAMIXMethod >> withImplementMethods [
 				add: self;
 				addAll: self implementMethod;
 				yourself ]) select: #isNotNil
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> withInnerclassDefiningMethods [
+	| res |
+	res := OrderedCollection with: self.
+	self belongsTo isInnerClass
+		ifTrue:
+			[ 
+			self logCr: 'PLOP' , self mooseName , '  ' , self belongsTo mooseName.
+			self belongsTo belongsTo isMethod
+				ifTrue:
+					[ 
+					self halt. "HAS not been treated yet..."
+					res add: self belongsTo belongsTo.
+					res addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
+	^ res
 ]
