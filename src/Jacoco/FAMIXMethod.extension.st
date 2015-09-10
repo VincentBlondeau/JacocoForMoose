@@ -184,7 +184,7 @@ FAMIXMethod >> staticlyFoundAnyTestMethodsCallingMyself [
 FAMIXMethod >> staticlyFoundByClassJacocoTestMethodsCallingMyself [
 	^ ((self
 		deepCollect:
-			[ :entity | (entity queryMooseChefAllIncomingInvocations "FAMIXInvocation") atScope: FAMIXClass ])
+			[ :entity | (entity queryAllIncomingInvocations " MooseChef FAMIXInvocation") atTypeScope "FAMIXClass" ])
 		flatCollect: [ :e | e methods ])
 		select: #isCoveringJacocoMethods
 	", {self}: not added because only the core is managed"
