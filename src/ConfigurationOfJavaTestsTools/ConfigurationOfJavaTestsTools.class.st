@@ -121,10 +121,8 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 					versionString: #'stable';
 					repository: 'http://smalltalkhub.com/mc/Moose/Moose/main/' ]."
 		spec 
-			package: #Infinitest with: [
-				spec requires: #('Moose' ). ];
-			package: #'Surefire-Core' with: [
-				spec requires: #('Moose' ). ];
+			package: #Infinitest;
+			package: #'Surefire-Core';
 			package: #Jacoco with: [
 				spec requires: #(#'Surefire-Core' 'Moose' #Infinitest ). ];
 			package: #'Surefire-Tests' with: [
