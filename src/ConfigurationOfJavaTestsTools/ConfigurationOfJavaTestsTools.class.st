@@ -115,11 +115,11 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
 		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
-		spec project: 'Moose' with: [
+		"spec project: 'Moose' with: [
 				spec
 					className: #ConfigurationOfMoose;
 					versionString: #'stable';
-					repository: 'http://smalltalkhub.com/mc/Moose/Moose/main/' ].
+					repository: 'http://smalltalkhub.com/mc/Moose/Moose/main/' ]."
 		spec 
 			package: #Infinitest with: [
 				spec requires: #('Moose' ). ];
