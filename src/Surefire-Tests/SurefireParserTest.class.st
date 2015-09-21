@@ -10,15 +10,29 @@ SurefireParserTest >> testSurefireXmlParsing [
 	result := SurefireSaxParser parse: self xmlResource.
 	self assert: result size equals: 4.
 	status := result collect: [ :e | e at: #status ].
-	self assert: (status includes: 'pass').
-	self assert: (status includes: 'error').
-	self assert: (status includes: 'failure').
+	self assert: (status occurrencesOf: 'pass') equals: 1.
+	self assert: (status occurrencesOf: 'error') equals: 1.
+	self assert: (status occurrencesOf: 'failure') equals: 1.
+	self assert: (status occurrencesOf: 'skipped') equals: 1.
 	self assert: (result allSatisfy: [ :e | (e at: #time) = 1.1 ]).
 	self
 		assert:
 			(result
 				allSatisfy:
 					[ :e | (e at: #testCaseName) beginsWith: 'testCompleteTechnologyModel' ])
+]
+
+{ #category : #'as yet unclassified' }
+SurefireParserTest >> testSurefireXmlParsing2 [
+	| result status |
+	result := SurefireSaxParser parse: self xmlResource2.
+	self assert: result size equals: 8.
+	status := result collect: [ :e | e at: #status ].
+	self assert: (status occurrencesOf: 'pass') equals: 1.
+	self assert:  (status occurrencesOf: 'error') equals: 5.
+	self assert:  (status occurrencesOf: 'failure') equals: 1.
+	self assert:  (status occurrencesOf: 'skipped') equals: 1.
+	
 ]
 
 { #category : #'as yet unclassified' }
@@ -57,4 +71,40 @@ SurefireParserTest >> xmlResource [
 		<system-out>[Surefire]</system-out>
 	</testcase>
 </testsuite>'
+]
+
+{ #category : #'as yet unclassified' }
+SurefireParserTest >> xmlResource2 [
+	^ '<?xml version="1.0" encoding="UTF-8"?>
+  <testrun name="aa.test.globalTest with jacoco" project="aa.test.globalTest" tests="8" started="5" failures="1" errors="2" ignored="1">
+  <testsuite name="aa.test.globalTest" incomplete="true">
+    <error>java.lang.IllegalArgumentException: javax.naming.NameNotFoundException: Name "globalTest" not found.
+	</error>
+    <testcase name="testSimple" classname="aa.test.globalTest" incomplete="true"/>
+    <testcase name="testException" classname="aa.test.globalTest" incomplete="true"/>
+    <testcase name="testRestriction" classname="aa.test.globalTest" incomplete="true"/>
+  </testsuite>
+  <testsuite name="aa.test.testSecond" time="15.677">
+    <testcase name="testSecond" classname="aa.test.testSecond" time="15.677">
+      <failure>java.lang.AssertionError: javax.naming.NameNotFoundException</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="aa.test.ReplacementTest" time="0.001">
+    <testcase name="initializationError" classname="aa.test.ReplacementTest" time="0.001">
+      <error>java.lang.Exception: No runnable methods
+	</error>
+    </testcase>
+  </testsuite>
+  <testsuite name="aa.test.ProduceTest" time="1.829">
+    <testcase name="testUpdateProduce" classname="aa.test.ReplacementTest" time="1.829">
+      <error>java.lang.IllegalArgumentException</error>
+    </testcase>
+  </testsuite>
+   <testsuite name="aa.test.ProduceManageTest" time="0.0">
+    <testcase name="testProducts" classname="aa.test.ProduceManageTest" time="0.0" ignored="true"/>
+  </testsuite>
+  <testsuite name="aa.test.ChargeTest" time="2.446">
+    <testcase name="testCharge" classname="aa.test.ChargeTest" time="2.446"/>
+  </testsuite>
+</testrun>'
 ]
