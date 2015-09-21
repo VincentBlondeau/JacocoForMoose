@@ -124,7 +124,7 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 			package: #Infinitest;
 			package: #'Surefire-Core';
 			package: #Jacoco with: [
-				spec requires: #(#'Surefire-Core' 'Moose' #Infinitest ). ];
+				spec requires: #(#'Surefire-Core' #Infinitest ). ];
 			package: #'Surefire-Tests' with: [
 				spec requires: #(#'Surefire-Core' ). ]. ].
 
