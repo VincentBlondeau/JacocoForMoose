@@ -18,13 +18,20 @@ SurefireImport >> basicRun [
 { #category : #importing }
 SurefireImport >> importTestCase: aTestCaseResult [
 	| mooseName methodOrClass |
-	mooseName := (aTestCaseResult at: #testSuiteName) copyReplaceAll: '.' with: '::'.
+	mooseName := (aTestCaseResult at: #testSuiteName)
+		copyReplaceAll: '.'
+		with: '::'.
+	(self isException: mooseName)
+		ifTrue: [ ^ self ].
 	methodOrClass := self model
 		entityNamed:
-			((aTestCaseResult at: #testSuiteName) = (aTestCaseResult at: #testCaseName)
+			((aTestCaseResult at: #testSuiteName)
+				= (aTestCaseResult at: #testCaseName)
 				ifTrue: [ mooseName ]
-				ifFalse: [ mooseName , '.' , (aTestCaseResult at: #testCaseName) , '()' ]).
-	methodOrClass testRunningTime: (aTestCaseResult at: #time).
+				ifFalse:
+					[ mooseName , '.' , (aTestCaseResult at: #testCaseName) , '()' ]).
+	methodOrClass
+		testRunningTime: (aTestCaseResult at: #time ifAbsent: [ 0 ]).
 	methodOrClass testStatus: (aTestCaseResult at: #status)
 ]
 
@@ -34,4 +41,9 @@ SurefireImport >> importTestSuite: aFileReference [
 	parsingResult := SurefireSaxParser parse: aFileReference contents.
 	parsingResult do: [:aRes | self importTestCase: aRes ].
 	
+]
+
+{ #category : #'as yet unclassified' }
+SurefireImport >> isException: aString [ 
+	^ aString =  'TempTest'
 ]

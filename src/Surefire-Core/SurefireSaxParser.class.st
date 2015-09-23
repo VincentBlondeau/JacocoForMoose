@@ -60,7 +60,10 @@ SurefireSaxParser >> startElement: aQualifiedName attributes: aDictionary [
 			[ testCase := self
 				reduceData: aDictionary
 				withScheme:
-					#(#time #time #testSuiteName #classname #testCaseName #name  #skipped #ignored).
+					#(#time #time #testSuiteName #classname #testCaseName #name #skipped #ignored).
+			(testCase at: #testCaseName) = 'initializationError'
+				ifTrue:
+					[ testCase at: #testCaseName put: (testCase at: #testSuiteName) ].
 			status := testSuite
 				at: #incomplete
 				ifPresent: [ testSuite at: #status ]
