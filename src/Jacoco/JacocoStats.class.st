@@ -148,6 +148,20 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	(#tn -> tn)"} asDictionary
 ]
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> isMethodAnchorInTheCoreDir: method [
+	^ method sourceAnchor
+		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/main/' ]
+		ifNotNil: [ :sa | sa fileName includesSubstring: '/main/' ]
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> isMethodAnchorInTheTestDir: method [
+	^ method sourceAnchor
+		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/test/' ]
+		ifNotNil: [ :sa | sa fileName includesSubstring: '/test/' ]
+]
+
 { #category : #'stats - making' }
 JacocoStats >> makeInfinitestStatsOn: method [
 	| positives realData |
@@ -219,31 +233,22 @@ JacocoStats >> makeStaticStatsOn: method [
 JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
 	^ (((self model allModelMethods reject: [ :e | e isStub ])
 		select:
-			[ :m | 
-			(m sourceAnchor
-				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/test' ]
-				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) reject: self toRemove) size
+			[ :m | (self isMethodAnchorInTheTestDir: m) and: [ m isCoveringJacocoMethods ] ])
+		reject: self toRemove) size
 ]
 
 { #category : #'as yet unclassified' }
 JacocoStats >> selectAllCoreMethods [
 	^ (self model allModelMethods reject: [ :e | e isStub ])
 		select:
-			[ :m | m sourceAnchor
-				ifNil:
-					[ m belongsTo sourceAnchor fileName
-						beginsWith: './wlp-cms-core/src/main' ]
-				ifNotNil:
-					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ] ]
+			[ :m | self isMethodAnchorInTheCoreDir: m ]
 ]
 
 { #category : #'as yet unclassified' }
 JacocoStats >> selectAllJacocoTestMethods [
 	^ (self model allModelMethods reject: [ :e | e isStub ])
 		select:
-			[ :m | (m sourceAnchor
-				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/test' ]
-				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ])
+			[ :m | (self isMethodAnchorInTheTestDir: m)
 				and: [ m isCoveringJacocoMethods  ] ]
 ]
 
@@ -251,12 +256,7 @@ JacocoStats >> selectAllJacocoTestMethods [
 JacocoStats >> selectAllTestMethods [
 	^ (self model allModelMethods reject: [ :e | e isStub ])
 		select:
-			[ :m | m sourceAnchor
-				ifNil:
-					[ m belongsTo sourceAnchor fileName
-						beginsWith: './wlp-cms-core/src/test' ]
-				ifNotNil:
-					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ] ]
+			[ :m | (self isMethodAnchorInTheTestDir: m) ]
 ]
 
 { #category : #accessing }
@@ -270,9 +270,7 @@ JacocoStats >> selectMethodsFromModel [
 	^ (self model allModelMethods reject: [ :e | e isStub ])
 		select:
 			[ :m | 
-			(m sourceAnchor
-				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/main' ]
-				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ])
+			(self isMethodAnchorInTheCoreDir: m)
 				and: [ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ]
 ]
 
@@ -282,6 +280,11 @@ JacocoStats >> shouldHalt [
 	self crLog: index.
 	index := index + 1.
 	Halt onCount: 1000
+]
+
+{ #category : #accessing }
+JacocoStats >> shouldRemoveSpecificly: element [
+	^ false
 ]
 
 { #category : #stats }
@@ -295,10 +298,10 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
-	(self
+"	(self
 		statsOn: aMooseModel
 		methodSelector: #makeInfinitestStatsOn:
-		dicoEntry: #jacocoVSInfinitest).
+		dicoEntry: #jacocoVSInfinitest)."
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticStatsOn:
@@ -341,11 +344,6 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 ]
 
 { #category : #accessing }
-JacocoStats >> testGetterSetter [
-	^ testGetterSetter ifNil: [ testGetterSetter := self model testGetterSetter ]
-]
-
-{ #category : #accessing }
 JacocoStats >> toRemove [
-	^ [ :e | e = self model testGetterSetter or: [ e testIsGreen not ] ]
+	^ [ :e | (self shouldRemoveSpecificly: e) or: [ e testIsGreen not ] ]
 ]
