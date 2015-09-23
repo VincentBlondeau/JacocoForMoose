@@ -36,7 +36,7 @@ FAMIXMethod >> allOutgoingInvocations [
 FAMIXMethod >> coverJacocoMethods [
 	<MSEProperty: #coverJacocoMethods type: #FAMIXMethod opposite: #coveredByJacocoTestMethods>
 	<multivalued>
-	<MSEComment: 'Methods that are covered by this class'>
+	<MSEComment: 'Methods that are covered by this test case'>
 	^ self privateState
 		attributeAt: #coverJacocoMethods
 		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coveredByJacocoTestMethods ]

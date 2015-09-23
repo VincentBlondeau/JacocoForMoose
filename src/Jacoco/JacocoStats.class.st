@@ -45,6 +45,18 @@ Class {
 	#category : #Jacoco
 }
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> avgNumberOfMethodsCoveredByATest [
+	^ (self selectAllJacocoTestMethods
+		average: [ :test | test coverJacocoMethods size ]) asFloat
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> avgNumberOfTestsThatCoversAMethod [
+	^ (self selectMethodsFromModel
+		average: [ :meth | meth coveredByJacocoTestMethods size ]) asFloat
+]
+
 { #category : #stats }
 JacocoStats >> basicRun [
 	^ self statsOn: self model
@@ -213,6 +225,40 @@ JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
 				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ]) and: [ m isCoveringJacocoMethods ] ]) reject: self toRemove) size
 ]
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> selectAllCoreMethods [
+	^ (self model allModelMethods reject: [ :e | e isStub ])
+		select:
+			[ :m | m sourceAnchor
+				ifNil:
+					[ m belongsTo sourceAnchor fileName
+						beginsWith: './wlp-cms-core/src/main' ]
+				ifNotNil:
+					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/main' ] ]
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> selectAllJacocoTestMethods [
+	^ (self model allModelMethods reject: [ :e | e isStub ])
+		select:
+			[ :m | (m sourceAnchor
+				ifNil: [ m belongsTo sourceAnchor fileName beginsWith: './wlp-cms-core/src/test' ]
+				ifNotNil: [ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ])
+				and: [ m isCoveringJacocoMethods  ] ]
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> selectAllTestMethods [
+	^ (self model allModelMethods reject: [ :e | e isStub ])
+		select:
+			[ :m | m sourceAnchor
+				ifNil:
+					[ m belongsTo sourceAnchor fileName
+						beginsWith: './wlp-cms-core/src/test' ]
+				ifNotNil:
+					[ :sa | sa fileName beginsWith: './wlp-cms-core/src/test' ] ]
+]
+
 { #category : #accessing }
 JacocoStats >> selectMethodsCovering: method [
 	^ (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ])
@@ -220,8 +266,8 @@ JacocoStats >> selectMethodsCovering: method [
 ]
 
 { #category : #accessing }
-JacocoStats >> selectMethodsFromModel: aMooseModel [
-	^ (aMooseModel allModelMethods reject: [ :e | e isStub ])
+JacocoStats >> selectMethodsFromModel [
+	^ (self model allModelMethods reject: [ :e | e isStub ])
 		select:
 			[ :m | 
 			(m sourceAnchor
@@ -240,17 +286,41 @@ JacocoStats >> shouldHalt [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	^ {(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
-	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
-	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass).
-	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner)} asDictionary
+	 
+	^ {(#numberOfJacocoTests -> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
+	(#numberOfCoreMethods -> self selectAllCoreMethods size).
+	(#numberOfTestMethods -> self selectAllTestMethods size).
+	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
+	(#NLOCTest -> (self selectAllTestMethods sum: #numberOfLinesOfCode)).
+	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
+	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
+	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeInfinitestStatsOn:
+		dicoEntry: #jacocoVSInfinitest).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticStatsOn:
+		dicoEntry: #jacocoVSStatic).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn:
+		dicoEntry: #jacocoVSStaticWithInheritance).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticClassStatsOn:
+		dicoEntry: #jacocoVSStaticClass).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticInnerclassesStatsOn:
+		dicoEntry: #jacocoVSStaticWithInner)} asDictionary
 ]
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
 	| precisionMean recallMean res methods gainData greenTests |
-	methods := self selectMethodsFromModel: aMooseModel.
+	methods := self selectMethodsFromModel.
 	res := methods
 		collect: [ :m | self perform: aMethodSelector with: m ].
 	precisionMean := self calculatePrecisionMeanOn: res.
