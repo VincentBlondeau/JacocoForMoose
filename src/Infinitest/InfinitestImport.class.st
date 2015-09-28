@@ -16,32 +16,38 @@ InfinitestImport >> basicRun [
 
 { #category : #importing }
 InfinitestImport >> importAssocInModel: anAssociation [
-	| change changedEntity mooseCoveredTests candidateClass outerCandidateClass |
+	| change changedEntity mooseCoveredTests candidateClass outerCandidateClass items |
 	"package.class$1 -> anonymous inner class"
 	"package.class$innerClass -> named innerclass"
 	"package.class$innerClass$innerInnerClass -> named innerclass"
 	change := anAssociation key.
 	changedEntity := model
 		entityNamed: change
-		ifAbsent: [ 
-			outerCandidateClass := model
+		ifAbsent:
+			[ outerCandidateClass := model
 				entityNamed: (change substrings: '$') first
-				ifAbsent: [ 
-					((change substrings: '$') first substrings: '::') last = 'package-info'
+				ifAbsent:
+					[ items := (change substrings: '$') first substrings: '::'.
+					((items last = 'package-info' or: [ items first = 'WEB-INF' ]) or: [items size = 1 "should be resolved because this class is in the default package"])
 						ifTrue: [ ^ ResumableNotFound signalFor: change ]
 						ifFalse: [ self halt ] ].
-			candidateClass := outerCandidateClass methods collect: #innerClassesImplementingMethods thenSelect: #isNotEmpty.
+			candidateClass := outerCandidateClass methods
+				collect: #innerClassesImplementingMethods
+				thenSelect: #isNotEmpty.
 			candidateClass flatten size = 1
 				ifTrue: [ candidateClass flatten first ]
-				ifFalse: [ 
-					model
+				ifFalse:
+					[ model
 						entityNamed: ('::' join: (change substrings: '$'))
-						ifAbsent: [ 
-							self halt.
-							candidateClass flatten at: (change substrings: '$') second asNumber ] ] ].
-	"changedEntity isConsideredAsChangedByInfinitest: true."
-	mooseCoveredTests := anAssociation value collect: [ :e | model entityNamed: e ].
-	changedEntity coveredByInfinitestTests: mooseCoveredTests
+						ifAbsent:
+							[ candidateClass flatten	"at: (change substrings: '$') second asNumber" ]
+					"We don't know how to solve it... -> choose one, all or none?" ] ].
+	mooseCoveredTests := anAssociation value
+		collect: [ :e | model entityNamed: e ].
+	changedEntity asOrderedCollection
+		do: [ :e | 
+			e isConsideredAsChangedByInfinitest: true.
+			e coveredByInfinitestTests: (mooseCoveredTests copyWithout: nil) ]
 ]
 
 { #category : #accessing }

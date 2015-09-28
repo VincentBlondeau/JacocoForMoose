@@ -18,7 +18,7 @@ InfinitestParser >> changedClass [
 
 { #category : #'as yet unclassified' }
 InfinitestParser >> changedClassAndDependencies [
-	^ changedClass , '[' asParser , #newline asParser , javaDependencies optional , ']' asParser , #newline asParser optional
+	^ changedClass , '[' asParser , #newline asParser star , javaDependencies optional , ']' asParser , #newline asParser star
 ]
 
 { #category : #'as yet unclassified' }
@@ -28,7 +28,7 @@ InfinitestParser >> changedClasses [
 
 { #category : #grammar }
 InfinitestParser >> dependency [
-	^ #blank asParser , ',' asParser negate plus flatten  , ',' asParser , #newline asParser
+	^ #blank asParser , ',' asParser negate plus flatten  , ',' asParser , #newline asParser star
 ]
 
 { #category : #'as yet unclassified' }

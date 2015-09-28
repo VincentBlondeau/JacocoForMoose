@@ -47,3 +47,15 @@ InfinitestParserTest >> testParseAll [
 	net.myproject.core.2424TestCase,
 ]'
 ]
+
+{ #category : #accessing }
+InfinitestParserTest >> testParseAllWindows [
+	self
+		parse:
+			'D:\TestsExperiements\CACP\wlp-product-master\wlp-product-master-pom\wlp-product-cc\wlp-product-cc-cards-batch\target\classes\net\atos\wlp\cedicam\cc\cardschemeimp\enums\JobList.class[
+	net.atos.wlp.cedicam.com.batch.BatchTest,
+]
+D:\TestsExperiements\CACP\wlp-product-master\wlp-product-master-pom\wlp-product-cc\wlp-product-cc-cards-batch\target\classes\net\atos\wlp\cedicam\cc\cardschemeimp\sicbimport\SicbBinImportLauncher.class[
+	net.atos.wlp.cedicam.com.batch.BatchTest,
+]'
+]

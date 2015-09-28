@@ -6,7 +6,12 @@ Class {
 
 { #category : #accessing }
 InfinitestResolver >> changedClass [
-	^ super changedClass ==> [ :coll | '::' join: (((coll allButLast: '.class' size) substrings: '/') allButFirst: 7) ]
+	^ super changedClass
+		==>
+			[ :coll | 
+			'::'
+				join:
+					(((coll allButLast: '.class' size) substrings: '\/') copyAfter: 'target') allButFirst ]
 ]
 
 { #category : #accessing }
