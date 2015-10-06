@@ -16,7 +16,7 @@ InfinitestImport >> basicRun [
 
 { #category : #importing }
 InfinitestImport >> importAssocInModel: anAssociation [
-	| change changedEntity mooseCoveredTests candidateClass outerCandidateClass items |
+	| change changedEntity mooseCoveredTests candidateClass outerCandidateClass |
 	"package.class$1 -> anonymous inner class"
 	"package.class$innerClass -> named innerclass"
 	"package.class$innerClass$innerInnerClass -> named innerclass"
@@ -27,10 +27,13 @@ InfinitestImport >> importAssocInModel: anAssociation [
 			[ outerCandidateClass := model
 				entityNamed: (change substrings: '$') first
 				ifAbsent:
-					[ items := (change substrings: '$') first substrings: '::'.
-					((items last = 'package-info' or: [ items first = 'WEB-INF' ]) or: [items size = 1 "should be resolved because this class is in the default package"])
+					[ | items |
+					items := (change substrings: '$') first substrings: '::'.
+					((items last = 'package-info' or: [ items first = 'WEB-INF' ])
+						or:
+							[ items size = 1	"should be resolved because this class is in the default package" ])
 						ifTrue: [ ^ ResumableNotFound signalFor: change ]
-						ifFalse: [ self halt ] ].
+						ifFalse: [ ^ ResumableNotFound signalFor: change ] ].
 			candidateClass := outerCandidateClass methods
 				collect: #innerClassesImplementingMethods
 				thenSelect: #isNotEmpty.
@@ -45,7 +48,8 @@ InfinitestImport >> importAssocInModel: anAssociation [
 	mooseCoveredTests := anAssociation value
 		collect: [ :e | model entityNamed: e ].
 	changedEntity asOrderedCollection
-		do: [ :e | 
+		do:
+			[ :e | 
 			e isConsideredAsChangedByInfinitest: true.
 			e coveredByInfinitestTests: (mooseCoveredTests copyWithout: nil) ]
 ]
