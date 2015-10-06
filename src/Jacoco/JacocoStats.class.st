@@ -98,12 +98,14 @@ JacocoStats >> calculatePrecisionMeanOn: res [
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculatePrecisionOn: aDictionary [
-	| tp fp |
+	| tp fp prec |
 	tp := aDictionary at: #tp.
 	fp := aDictionary at: #fp.
-	^ tp size + fp size = 0
+	prec := tp size + fp size = 0
 		ifTrue: [ nil ]
-		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ].
+	aDictionary at: #Prec put: prec.
+	^ prec
 ]
 
 { #category : #'metrics calculus' }
@@ -117,12 +119,14 @@ JacocoStats >> calculateRecallMeanOn: res [
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculateRecallOn: aDictionary [
-	| tp fn |
+	| tp fn recall |
 	tp := aDictionary at: #tp.
 	fn := aDictionary at: #fn.
-	^ tp size + fn size = 0
+	recall := tp size + fn size = 0
 		ifTrue: [ nil ]
-		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
+	aDictionary at: #Recall put: recall.
+	^ recall
 ]
 
 { #category : #'stats - making' }
@@ -168,6 +172,19 @@ JacocoStats >> makeInfinitestStatsOn: method [
 	positives := method staticlyFoundInfinitestTestMethodsCallingMyself reject: self toRemove.
 	"all := method staticlyFoundAnyTestMethodsCallingMyself."
 	realData := self selectMethodsCovering: method.
+	^ self
+		createDictionaryForMethod: method
+		fromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> makeStaticAccessStatsOn: method [ 
+	| positives realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess reject: self toRemove.
+	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
 	^ self
 		createDictionaryForMethod: method
 		fromPostives: positives
@@ -289,8 +306,7 @@ JacocoStats >> shouldRemoveSpecificly: element [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	 
-	^ {(#numberOfJacocoTests -> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
+	^ {"(#numberOfJacocoTests -> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
 	(#numberOfCoreMethods -> self selectAllCoreMethods size).
 	(#numberOfTestMethods -> self selectAllTestMethods size).
 	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
@@ -298,26 +314,12 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
-"	(self
-		statsOn: aMooseModel
-		methodSelector: #makeInfinitestStatsOn:
-		dicoEntry: #jacocoVSInfinitest)."
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticStatsOn:
-		dicoEntry: #jacocoVSStatic).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn:
-		dicoEntry: #jacocoVSStaticWithInheritance).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticClassStatsOn:
-		dicoEntry: #jacocoVSStaticClass).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticInnerclassesStatsOn:
-		dicoEntry: #jacocoVSStaticWithInner)} asDictionary
+	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
+	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass).
+	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner)."
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessStatsOn: dicoEntry: #jacocoVSStaticWithAccess)} asDictionary
 ]
 
 { #category : #stats }
