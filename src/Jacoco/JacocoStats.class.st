@@ -180,6 +180,32 @@ JacocoStats >> makeInfinitestStatsOn: method [
 ]
 
 { #category : #'as yet unclassified' }
+JacocoStats >> makeStaticAccessAndInnerAndInheritanceStatsOn: method [ 
+	| positives realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance reject: self toRemove.
+	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	^ self
+		createDictionaryForMethod: method
+		fromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> makeStaticAccessAndInnerStatsOn: method [ 
+	| positives realData |
+	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner reject: self toRemove.
+	realData := self selectMethodsCovering: method.
+	"all := method staticlyFoundAnyTestMethodsCallingMyself."
+	^ self
+		createDictionaryForMethod: method
+		fromPostives: positives
+		realData: realData
+		all: nil
+]
+
+{ #category : #'as yet unclassified' }
 JacocoStats >> makeStaticAccessStatsOn: method [ 
 	| positives realData |
 	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess reject: self toRemove.
@@ -193,10 +219,10 @@ JacocoStats >> makeStaticAccessStatsOn: method [
 ]
 
 { #category : #'stats - making' }
-JacocoStats >> makeStaticCallAndAccessAndInheritanceStatsOn: method [
+JacocoStats >> makeStaticCallAndInheritanceStatsOn: method [
 	| positives realData |
 	positives := method
-		staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses
+		staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance
 		reject: self toRemove.
 	realData := self selectMethodsCovering: method.
 	^ self
@@ -306,7 +332,9 @@ JacocoStats >> shouldRemoveSpecificly: element [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	^ {"(#numberOfJacocoTests -> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
+	^ {(#numberOfJacocoTests
+		->
+			(self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
 	(#numberOfCoreMethods -> self selectAllCoreMethods size).
 	(#numberOfTestMethods -> self selectAllTestMethods size).
 	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
@@ -314,12 +342,36 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
-	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeInfinitestStatsOn:
+		dicoEntry: #jacocoVSInfinitest).
 	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndAccessAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
-	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass).
-	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner)."
-	(self statsOn: aMooseModel methodSelector: #makeStaticAccessStatsOn: dicoEntry: #jacocoVSStaticWithAccess)} asDictionary
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticCallAndInheritanceStatsOn:
+		dicoEntry: #jacocoVSStaticWithInheritance).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticClassStatsOn:
+		dicoEntry: #jacocoVSStaticClass).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticInnerclassesStatsOn:
+		dicoEntry: #jacocoVSStaticWithInner).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticAccessStatsOn:
+		dicoEntry: #jacocoVSStaticWithAccess).
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticAccessAndInnerStatsOn:
+		dicoEntry: #jacocoVSStaticWithAccessAndInner).
+		.
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn:
+		dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances)} asDictionary
 ]
 
 { #category : #stats }

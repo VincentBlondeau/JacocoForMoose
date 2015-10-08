@@ -22,7 +22,17 @@ FAMIXMethod >> allIncomingInvocationsWithAccessCalls [
 	^ self allIncomingInvocationsWith: #withAccessCalls:
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> allIncomingInvocationsWithAccessCallsAndInner [
+	^ self allIncomingInvocationsWith: #withAccessCallsAndInner:
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritance [
+	^ self allIncomingInvocationsWith: #withAccessCallsAndInnerAndInheritance:
+]
+
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allIncomingInvocationsWithInnerclassDefiningMethods [
 	^ self allIncomingInvocationsWith: #withInnerclassDefiningMethods
 ]
@@ -69,29 +79,26 @@ FAMIXMethod >> coveredByTestClassesWithoutSomeClasses [
 ]
 
 { #category : #'*Jacoco-Import - static' }
-FAMIXMethod >> findRelatedAttribute [
-	| class attributes |
-	^ self name = '<Initializer>'
-		ifTrue:
-			[ class := self belongsTo.
-			attributes := class attributes
-				select: [ :attribute | attribute declaredType = class ].
-			self assert: attributes size = 1.
-			attributes ]
-		ifFalse: [ {} ]
-]
-
-{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> findRelatedAttributeCommingFrom: aMethod [
-	| class attributes |
+	| class attributes declaredTypeOfTheMethodReturn |
 	^ self name = '<Initializer>'
 		ifTrue:
 			[ class := self belongsTo.
-			declaredType := aMethod isConstructor
+			declaredTypeOfTheMethodReturn := aMethod isConstructor
 				ifTrue: [ aMethod belongsTo ]
 				ifFalse: [ aMethod declaredType ].
 			attributes := class attributes
-				select: [ :attribute | attribute declaredType = declaredType ].
+				select:
+					[ :attribute | declaredTypeOfTheMethodReturn withSuperclassHierarchy includes: attribute declaredType ].
+			attributes
+				ifEmpty:
+					[ self sourceAnchor
+						ifNotNil: [ {self.
+							aMethod} asLog
+								tag: 'findRelatedAttributeCommingFrom';
+								emit.
+							^ {} ]
+						ifNil: [ self notYetImplemented ] ].
 			self assert: attributes size = 1.
 			attributes ]
 		ifFalse: [ {} ]
@@ -253,18 +260,38 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess [
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses [
-	^ (self allIncomingInvocationsWithInnerclassDefiningMethods, {self}) select: #isCoveringJacocoMethods
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner [
+
+"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
+
+"self implementMethod collect: #allIncomingInvocations.
+	self haltIf: [ self accesses isNotEmpty ]."
+	^ (self allIncomingInvocationsWithAccessCallsAndInner, {self}) select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
-FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingNotOnlyAccesses [
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance [
+
+"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
+
+"self implementMethod collect: #allIncomingInvocations.
+	self haltIf: [ self accesses isNotEmpty ]."
+	^ (self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance, {self}) select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance [
 
 "((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
 
 "self implementMethod collect: #allIncomingInvocations.
 	self haltIf: [ self accesses isNotEmpty ]."
 	^ (self allIncomingInvocationsWithInterfacesCalls, {self}) select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses [
+	^ (self allIncomingInvocationsWithInnerclassDefiningMethods, {self}) select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import - static' }
@@ -275,6 +302,16 @@ FAMIXMethod >> withAccessCalls: theOriginalEntity [
 			((self findRelatedAttributeCommingFrom: theOriginalEntity)
 				collect: [ :e | e incomingAccesses collect: #from ]);
 		yourself) select: #isNotNil
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> withAccessCallsAndInner: theOriginalEntity [
+	^ (self withInnerclassDefiningMethods , (self withAccessCalls: theOriginalEntity )) asSet
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> withAccessCallsAndInnerAndInheritance: theOriginalEntity [
+	^ (self withInnerclassDefiningMethods , (self withAccessCalls: theOriginalEntity) , self withImplementMethods) asSet
 ]
 
 { #category : #'*Jacoco-Import - static' }
@@ -293,13 +330,14 @@ FAMIXMethod >> withInnerclassDefiningMethods [
 	res := OrderedCollection with: self.
 	self belongsTo isInnerClass
 		ifTrue:
-			[ 
-			self logCr: 'PLOP' , self mooseName , '  ' , self belongsTo mooseName.
+			[ {self belongsTo.
+			self mooseName} asLog
+				tag: 'withInnerclassDefiningMethods';
+				emit.
 			self belongsTo belongsTo isMethod
 				ifTrue:
-					[ 
-					self halt. "HAS not been treated yet..."
-					res add: self belongsTo belongsTo.
-					res addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
+					[ res add: self belongsTo belongsTo.
+					res
+						addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
 	^ res
 ]
