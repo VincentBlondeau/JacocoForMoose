@@ -251,42 +251,22 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyself [
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess [
-
-"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
-
-"self implementMethod collect: #allIncomingInvocations.
-	self haltIf: [ self accesses isNotEmpty ]."
-	^ (self allIncomingInvocationsWithAccessCalls, {self}) select: #isCoveringJacocoMethods
+	^ self allIncomingInvocationsWithAccessCalls , {self} select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner [
-
-"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
-
-"self implementMethod collect: #allIncomingInvocations.
-	self haltIf: [ self accesses isNotEmpty ]."
-	^ (self allIncomingInvocationsWithAccessCallsAndInner, {self}) select: #isCoveringJacocoMethods
+	^ self allIncomingInvocationsWithAccessCallsAndInner , {self} select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance [
-
-"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
-
-"self implementMethod collect: #allIncomingInvocations.
-	self haltIf: [ self accesses isNotEmpty ]."
-	^ (self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance, {self}) select: #isCoveringJacocoMethods
+	^ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance , {self} select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance [
-
-"((self accesses collect: [ :access | access to  incomingAccesses collect: #from ] ) flatten collect: #allIncomingInvocations ) flatten."
-
-"self implementMethod collect: #allIncomingInvocations.
-	self haltIf: [ self accesses isNotEmpty ]."
-	^ (self allIncomingInvocationsWithInterfacesCalls, {self}) select: #isCoveringJacocoMethods
+	^ self allIncomingInvocationsWithInterfacesCalls , {self} select: #isCoveringJacocoMethods
 ]
 
 { #category : #'*Jacoco-Import' }
