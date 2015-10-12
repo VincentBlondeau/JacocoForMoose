@@ -115,11 +115,11 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
 		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
-		"spec project: 'Moose' with: [
+		spec project: 'SystemLogger' with: [
 				spec
-					className: #ConfigurationOfMoose;
-					versionString: #'stable';
-					repository: 'http://smalltalkhub.com/mc/Moose/Moose/main/' ]."
+					className: #ConfigurationOfSystemLogger;
+					versionString: #'development';
+					repository: 'http://smalltalkhub.com/mc/StephaneDucasse/SystemLogger/main/' ].
 		spec 
 			package: #Infinitest;
 			package: #'Surefire-Core';
