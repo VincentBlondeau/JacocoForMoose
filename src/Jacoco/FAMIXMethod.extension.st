@@ -93,13 +93,18 @@ FAMIXMethod >> findRelatedAttributeCommingFrom: aMethod [
 			attributes
 				ifEmpty:
 					[ self sourceAnchor
-						ifNotNil: [ {self.
+						ifNotNil:
+							[ {self.
 							aMethod} asLog
-								tag: 'findRelatedAttributeCommingFrom';
+								tag: 'findRelatedAttributeCommingFrom-empty';
 								emit.
 							^ {} ]
 						ifNil: [ self notYetImplemented ] ].
-			self assert: attributes size = 1.
+			attributes size = 1
+				ifFalse: [ {self.
+					aMethod} asLog
+						tag: 'findRelatedAttributeCommingFrom-sup1';
+						emit ].
 			attributes ]
 		ifFalse: [ {} ]
 ]
@@ -310,10 +315,10 @@ FAMIXMethod >> withInnerclassDefiningMethods [
 	res := OrderedCollection with: self.
 	self belongsTo isInnerClass
 		ifTrue:
-			[ {self belongsTo.
+			[ "{self belongsTo.
 			self mooseName} asLog
 				tag: 'withInnerclassDefiningMethods';
-				emit.
+				emit."
 			self belongsTo belongsTo isMethod
 				ifTrue:
 					[ res add: self belongsTo belongsTo.

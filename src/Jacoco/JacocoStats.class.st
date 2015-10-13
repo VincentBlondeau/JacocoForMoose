@@ -354,46 +354,20 @@ JacocoStats >> shouldRemoveSpecificly: element [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-	^ {(#numberOfJacocoTests
-		->
-			(self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
-	(#numberOfCoreMethods -> self selectAllCoreMethods size).
-	(#numberOfTestMethods -> self selectAllTestMethods size).
-	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
-	(#NLOCTest -> (self selectAllTestMethods sum: #numberOfLinesOfCode)).
+	^ {(#numberOfJacocoTests -> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
+	(#NLOCCore -> (self selectMethodsFromModel sum: #numberOfLinesOfCode)).
+	(#NLOCTest -> ((self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) sum: #numberOfLinesOfCode)).
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeInfinitestStatsOn:
-		dicoEntry: #jacocoVSInfinitest).
+	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
 	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticCallAndInheritanceStatsOn:
-		dicoEntry: #jacocoVSStaticWithInheritance).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticClassStatsOn:
-		dicoEntry: #jacocoVSStaticClass).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticInnerclassesStatsOn:
-		dicoEntry: #jacocoVSStaticWithInner).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticAccessStatsOn:
-		dicoEntry: #jacocoVSStaticWithAccess).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticAccessAndInnerStatsOn:
-		dicoEntry: #jacocoVSStaticWithAccessAndInner).
-		.
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn:
-		dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances)} asDictionary
+	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
+	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass).
+	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner).
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessStatsOn: dicoEntry: #jacocoVSStaticWithAccess).
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInner).
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances)} asDictionary
 ]
 
 { #category : #stats }
