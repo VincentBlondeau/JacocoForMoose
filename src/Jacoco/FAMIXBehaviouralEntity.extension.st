@@ -1,5 +1,15 @@
 Extension { #name : #FAMIXBehaviouralEntity }
 
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> duplicatedEntities [
+	^ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
+		includes: self belongsTo)
+		ifTrue:
+			[ self belongsTo methods
+				select: [ :m | m signature = self signature ] ]
+		ifFalse: [ {self} ]
+]
+
 { #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> numberOfArgsFromSignature [
 	<MSEProperty: #numberOfArgsFromSignature type: #Number>

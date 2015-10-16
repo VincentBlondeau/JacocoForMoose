@@ -65,7 +65,8 @@ JacocoStats >> basicRun [
 { #category : #'metrics calculus' }
 JacocoStats >> calculateGainDataOn: res [
 	| elements numberOfTests avgWithoutZeros gainWithoutZeros gainWithZeros avgWithZeros numberOfZeros |
-	numberOfTests := self numberOfTestsMethodsFromModel: model.
+
+	numberOfTests := self numberOfTestsMethodsFromModel: model. 
 	elements := res collect: [ :e | self calculateGainOn: e ] thenReject: #isNil.
 	avgWithoutZeros := (elements asOrderedCollection
 		removeAllSuchThat: [ :f | f closeTo: 0.0 ];
@@ -286,6 +287,7 @@ JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 JacocoStats >> mappingToMethodGetters [
 	^ {(#makeInfinitestStatsOn: -> #staticlyFoundInfinitestTestMethodsCallingMyself).
 	(#makeStaticAccessAndInnerAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance).
+		(#makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable).
 	(#makeStaticAccessAndInnerStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner).
 	(#makeStaticAccessStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess).
 	(#makeStaticCallAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance).
@@ -367,7 +369,8 @@ JacocoStats >> statsOn: aMooseModel [
 	(self statsOn: aMooseModel methodSelector: #makeStaticInnerclassesStatsOn: dicoEntry: #jacocoVSStaticWithInner).
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessStatsOn: dicoEntry: #jacocoVSStaticWithAccess).
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInner).
-	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances)} asDictionary
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances).
+	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables)} asDictionary
 ]
 
 { #category : #stats }
