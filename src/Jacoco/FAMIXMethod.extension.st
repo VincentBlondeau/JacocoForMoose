@@ -49,6 +49,11 @@ FAMIXMethod >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCal
 ]
 
 { #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> allIncomingInvocationsWithCallable [
+	^ self allIncomingInvocationsWith: {#withCallables. #withIncommingInvocations}
+]
+
+{ #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> allIncomingInvocationsWithInnerclassDefiningMethods [
 	^ self allIncomingInvocationsWith: #(#withInnerclassDefiningMethods withIncommingInvocations)
 ]
@@ -298,6 +303,11 @@ FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAnd
 ]
 
 { #category : #'*Jacoco-Import' }
+FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable [
+	^ self allIncomingInvocationsWithCallable , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXMethod >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance [
 	^ self allIncomingInvocationsWithInterfacesCalls , {self} select: #isCoveringJacocoMethods
 ]
@@ -318,15 +328,13 @@ FAMIXMethod >> withCallables [
 	self signature = 'call()'
 		ifTrue:
 			[ self
-				assert:
-					(self belongsTo directSuperclasses
-						anySatisfy: [ :e | e name = 'Callable' ]).
+				assert: (self belongsTo directSuperclasses anySatisfy: [ :e | e name = 'Callable' ]).
 			constructor := self belongsTo methods
-				select:
-					[ :m | m isConstructor or: [ m name endsWith: '.', m belongsTo name ] ].
-			self assert: constructor size = 1.
-			return addAll: constructor first allIncomingInvocations.
-			].
+				select: [ :m | m isConstructor or: [ m name endsWith: '.' , m belongsTo name ] ].
+			"self assert: constructor size = 1."
+			constructor size = 1
+				ifFalse: [ ^ return select: #isNotNil ].
+			return addAll: constructor first allIncomingInvocations ].
 	^ return select: #isNotNil
 ]
 

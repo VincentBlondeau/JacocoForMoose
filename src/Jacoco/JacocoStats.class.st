@@ -287,13 +287,14 @@ JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 JacocoStats >> mappingToMethodGetters [
 	^ {(#makeInfinitestStatsOn: -> #staticlyFoundInfinitestTestMethodsCallingMyself).
 	(#makeStaticAccessAndInnerAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance).
-		(#makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable).
+	(#makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable).
 	(#makeStaticAccessAndInnerStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner).
 	(#makeStaticAccessStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess).
 	(#makeStaticCallAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance).
 	(#makeStaticClassStatsOn: -> #staticlyFoundByClassJacocoTestMethodsCallingMyself).
 	(#makeStaticInnerclassesStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses).
-	(#makeStaticStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyself)} asDictionary
+	(#makeStaticStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyself).
+	(#makeStaticCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable)} asDictionary
 ]
 
 { #category : #accessing }
@@ -362,6 +363,7 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
+		(self statsOn: aMooseModel methodSelector: #makeStaticCallableStatsOn: dicoEntry: #jacocoVSStaticWithCallables).
 	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
 	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
 	(self statsOn: aMooseModel methodSelector: #makeStaticCallAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithInheritance).
@@ -370,6 +372,7 @@ JacocoStats >> statsOn: aMooseModel [
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessStatsOn: dicoEntry: #jacocoVSStaticWithAccess).
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInner).
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritances).
+	
 	(self statsOn: aMooseModel methodSelector: #makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables)} asDictionary
 ]
 
