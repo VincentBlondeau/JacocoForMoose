@@ -1,7 +1,7 @@
 Class {
 	#name : #JacocoStatsCMS,
 	#superclass : #JacocoStats,
-	#category : #Jacoco
+	#category : #'Jacoco-TestSelection'
 }
 
 { #category : #'as yet unclassified' }

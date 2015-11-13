@@ -42,7 +42,7 @@ Class {
 		'index',
 		'testGetterSetter'
 	],
-	#category : #Jacoco
+	#category : #'Jacoco-TestSelection'
 }
 
 { #category : #'as yet unclassified' }
@@ -165,122 +165,6 @@ JacocoStats >> isMethodAnchorInTheTestDir: method [
 	^ method sourceAnchor
 		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/test/' ]
 		ifNotNil: [ :sa | sa fileName includesSubstring: '/test/' ]
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeInfinitestStatsOn: method [
-	| positives realData |
-	positives := method staticlyFoundInfinitestTestMethodsCallingMyself reject: self toRemove.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	realData := self selectMethodsCovering: method.
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticAccessAndInnerAndInheritanceStatsOn: method [ 
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticAccessAndInnerStatsOn: method [ 
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticAccessStatsOn: method [ 
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticCallAndInheritanceStatsOn: method [
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticClassStatsOn: method [
-	| positives realData |
-	positives := method staticlyFoundByClassJacocoTestMethodsCallingMyself reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticInnerclassesStatsOn: method [
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStaticStatsOn: method [
-	| positives realData |
-	positives := method staticlyFoundJacocoTestMethodsCallingMyself reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	"all := method staticlyFoundAnyTestMethodsCallingMyself."
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
-]
-
-{ #category : #'stats - deprecated' }
-JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
-	| mapping positives realData |
-	mapping := self mappingToMethodGetters at: aMethodSelector.
-	positives := (method perform: mapping) reject: self toRemove.
-	realData := self selectMethodsCovering: method.
-	^ self
-		createDictionaryForMethod: method
-		fromPostives: positives
-		realData: realData
-		all: nil
 ]
 
 { #category : #stats }

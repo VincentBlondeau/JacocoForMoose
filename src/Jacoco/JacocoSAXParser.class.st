@@ -6,7 +6,7 @@ Class {
 		'method',
 		'result'
 	],
-	#category : #Jacoco
+	#category : #'Jacoco-Importer'
 }
 
 { #category : #'as yet unclassified' }

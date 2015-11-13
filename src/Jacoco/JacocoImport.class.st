@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'testMethod'
 	],
-	#category : #Jacoco
+	#category : #'Jacoco-Importer'
 }
 
 { #category : #private }

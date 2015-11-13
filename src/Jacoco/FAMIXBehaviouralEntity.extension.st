@@ -1,6 +1,42 @@
 Extension { #name : #FAMIXBehaviouralEntity }
 
-{ #category : #'*Jacoco-Import - static' }
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> addCoveredByJacocoTestClass: aFAMIXClass [ 
+	self coveredByJacocoTestMethods add: aFAMIXClass 
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> coverJacocoMethods [
+	<MSEProperty: #coverJacocoMethods type: #FAMIXMethod opposite: #coveredByJacocoTestMethods>
+	<multivalued>
+	<MSEComment: 'Methods that are covered by this test case'>
+	^ self privateState
+		attributeAt: #coverJacocoMethods
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coveredByJacocoTestMethods ]
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> coverJacocoMethods: aCollection [
+	self coverJacocoMethods values: aCollection
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> coveredByJacocoTestMethods [
+	<MSEProperty: #coveredByJacocoTestMethods type: #FAMIXMethod opposite: #coverJacocoMethods>
+	<multivalued>
+	<MSEComment: 'Methods whose tests cover this method'>
+	^ self privateState
+		attributeAt: #coveredByJacocoTestMethods
+		ifAbsentPut: [ FMMultiMultivalueLink on: self opposite: #coverJacocoMethods ]
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> coveredByTestClassesWithoutSomeClasses [
+
+	^ self coveredByJacocoTestMethods reject: [ :c | c mooseName = 'net::atos::wlp::cedicam::AbstractTest' ]
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> duplicatedEntities [
 	^ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
 		includes: self belongsTo)
@@ -8,6 +44,69 @@ FAMIXBehaviouralEntity >> duplicatedEntities [
 			[ self belongsTo methods
 				select: [ :m | m signature = self signature ] ]
 		ifFalse: [ {self} ]
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isCallingCoveredTestsClasses [
+	^ (self
+		deepCollect: [ :entity | 
+			entity incomingInvocations
+				collect: [ :inv | 
+					inv from	"isStub
+				ifFalse: [ inv from ]
+				ifTrue: [ nil ] " ]
+				thenSelect: #isNotNil ]) anySatisfy: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isCallingTestsClasses [
+	^ (self
+		deepCollect: [ :entity | 
+			entity incomingInvocations
+				collect: [ :inv | 
+					inv from	"isStub
+				ifFalse: [ inv from ]
+				ifTrue: [ nil ] " ]
+				thenSelect: #isNotNil ]) anySatisfy: #isTest
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isCoveredByJacocoTestMethods [
+	<MSEProperty: #isCoveredByJacocoTestMethods type: #Boolean>
+	<multivalued>
+	<derived>
+	<MSEComment: 'If the method is covered by tests'>
+	^ self coveredByJacocoTestMethods isNotEmpty
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isCoveredByJacocoTestMethodsByRejecting: aBlock [
+	^ (self coveredByJacocoTestMethods reject: aBlock) isNotEmpty
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isCoveringJacocoMethods [
+	<MSEProperty: #isCoveringJacocoMethods type: #Boolean>
+	<multivalued>
+	<MSEComment: 'True is the method covers methods'>
+	^ self coverJacocoMethods isNotEmpty
+]
+
+{ #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> matchWithJacocoDescription: aJacocoDescription [
+	| returnValue selfArguments jacocoArgs jacocoArgsTypes return |
+	{self signature.aJacocoDescription}.
+	returnValue := aJacocoDescription first.
+	jacocoArgs := aJacocoDescription allButFirst.
+	"self parameters ifNotEmpty: [ self halt ]."
+	selfArguments := (self signature substrings: '(') second allButLast.
+	(selfArguments substrings: ',') collect: #asLowercase.
+	jacocoArgsTypes := jacocoArgs
+		collect: [ :i | (i substrings: '/') last asLowercase ].
+	return := jacocoArgsTypes
+		= ((selfArguments substrings: ',') collect: #asLowercase).
+
+	^ return
 ]
 
 { #category : #'*Jacoco-Import' }
@@ -23,4 +122,73 @@ FAMIXBehaviouralEntity >> numberOfArgsFromSignature [
 	"
 	
 	^ args size - (cut second occurrencesOf: $<)
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundAnyTestMethodsCallingMyself [
+	^ (self
+		deepCollect: [ :entity | 
+			entity incomingInvocations
+				collect: [ :inv | 
+					inv from	"isStub
+				ifFalse: [ inv from ]
+				ifTrue: [ nil ] " ]
+				thenSelect: #isNotNil ]) select: #isTest
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundByClassJacocoTestMethodsCallingMyself [
+	^ ((self
+		deepCollect:
+			[ :entity | (entity queryAllIncomingInvocations " MooseChef FAMIXInvocation") atTypeScope "FAMIXClass" ])
+		flatCollect: [ :e | e methods ])
+		select: #isCoveringJacocoMethods
+	", {self}: not added because only the core is managed"
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyself [
+	^ ((self
+		deepCollect: [ :entity | 
+			entity incomingInvocations
+				collect: [ :inv | 
+					inv from	"isStub
+				ifFalse: [ inv from ]
+				ifTrue: [ nil ] " ]
+				thenSelect: #isNotNil ]), { self } ) select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess [
+	^ self allIncomingInvocationsWithAccessCalls , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner [
+	^ self allIncomingInvocationsWithAccessCallsAndInner , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance [
+	^ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable [
+	^ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable [
+	^ self allIncomingInvocationsWithCallable , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance [
+	^ self allIncomingInvocationsWithInterfacesCalls , {self} select: #isCoveringJacocoMethods
+]
+
+{ #category : #'*Jacoco-TestSelection' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses [
+	^ (self allIncomingInvocationsWithInnerclassDefiningMethods, {self}) select: #isCoveringJacocoMethods
 ]
