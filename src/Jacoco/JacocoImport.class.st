@@ -1,6 +1,6 @@
 Class {
 	#name : #JacocoImport,
-	#superclass : #MooseOperator,
+	#superclass : #MooseFileOperator,
 	#instVars : [
 		'testMethod'
 	],
@@ -11,7 +11,7 @@ Class {
 JacocoImport >> basicRun [
 	| files |
 	Transcript clear.
-	files := self coverageXmlfolder asFileReference allFiles.
+	files := self coverageXmlFiles.
 	files
 		do: [ :file | 
 			self importFile: file.
@@ -19,7 +19,12 @@ JacocoImport >> basicRun [
 ]
 
 { #category : #'as yet unclassified' }
-JacocoImport >> coverageXmlfolder [
+JacocoImport >> coverageXmlFiles [
+	^ self coverageXmlfolderName asFileReference allFiles
+]
+
+{ #category : #'as yet unclassified' }
+JacocoImport >> coverageXmlfolderName [
 	^ 'artifacts/XML_REPORTS'
 ]
 
@@ -195,7 +200,7 @@ JacocoImport >> importXML: aXMLDocument [
 
 { #category : #accessing }
 JacocoImport >> length [
-	^ self coverageXmlfolder asFileReference allFiles size
+	^ self coverageXmlFiles size
 ]
 
 { #category : #'as yet unclassified' }
