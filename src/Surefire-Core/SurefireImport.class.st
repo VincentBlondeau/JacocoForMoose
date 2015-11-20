@@ -10,8 +10,7 @@ Class {
 { #category : #private }
 SurefireImport >> basicRun [
 	| testSuiteFiles |
-	testSuiteFiles := self rootFolder children
-		select: [ :f | f extension = 'xml' ].
+	testSuiteFiles := self testsResultsFiles.
 	testSuiteFiles do: [ :aFile | self importTestSuite: aFile ]
 ]
 
@@ -46,4 +45,9 @@ SurefireImport >> importTestSuite: aFileReference [
 { #category : #'as yet unclassified' }
 SurefireImport >> isException: aString [ 
 	^ aString =  'TempTest'
+]
+
+{ #category : #private }
+SurefireImport >> testsResultsFiles [
+	^ self rootFolder children select: [ :f | f extension = 'xml' ]
 ]
