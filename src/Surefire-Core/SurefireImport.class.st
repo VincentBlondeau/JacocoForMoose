@@ -16,30 +16,32 @@ SurefireImport >> basicRun [
 
 { #category : #importing }
 SurefireImport >> importTestCase: aTestCaseResult [
-	| mooseName methodOrClass |
-	mooseName := (aTestCaseResult at: #testSuiteName)
-		copyReplaceAll: '.'
-		with: '::'.
-	(self isException: mooseName)
+	| mooseClassName methodOrClass |
+	mooseClassName := (aTestCaseResult at: #testSuiteName) copyReplaceAll: '.' with: '::'.
+	(self isException: mooseClassName)
 		ifTrue: [ ^ self ].
 	methodOrClass := self model
-		entityNamed:
-			((aTestCaseResult at: #testSuiteName)
-				= (aTestCaseResult at: #testCaseName)
-				ifTrue: [ mooseName ]
-				ifFalse:
-					[ mooseName , '.' , (aTestCaseResult at: #testCaseName) , '()' ]).
+		javaEntityNamed:
+			((aTestCaseResult at: #testSuiteName) = (aTestCaseResult at: #testCaseName)
+				ifTrue: [ mooseClassName ]
+				ifFalse: [ mooseClassName , '.' , (aTestCaseResult at: #testCaseName) , '()' ]).
 	methodOrClass
-		testRunningTime: (aTestCaseResult at: #time ifAbsent: [ 0 ]).
+		ifNil:
+			[ methodOrClass := self
+				searchMethodNamed: (aTestCaseResult at: #testCaseName) , '()'
+				inSuperclassesOf: (self model javaEntityNamed: mooseClassName) ].
+	methodOrClass testRunningTime: (aTestCaseResult at: #time ifAbsent: [ 0 ]).
 	methodOrClass testStatus: (aTestCaseResult at: #status)
 ]
 
 { #category : #importing }
 SurefireImport >> importTestSuite: aFileReference [
 	| parsingResult |
-	parsingResult := SurefireSaxParser parse: aFileReference contents.
-	parsingResult do: [:aRes | self importTestCase: aRes ].
-	
+	[ parsingResult := SurefireSaxParser parse: aFileReference contents.
+	parsingResult do: [ :aRes | self importTestCase: aRes ] ]
+		on: FileDoesNotExist
+		do: [ :ex | ex asLog emit ]
+	"Actually, it is because the path is too long..."
 ]
 
 { #category : #'as yet unclassified' }
