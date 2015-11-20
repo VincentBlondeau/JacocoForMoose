@@ -5,6 +5,64 @@ FAMIXBehaviouralEntity >> addCoveredByJacocoTestClass: aFAMIXClass [
 	self coveredByJacocoTestMethods add: aFAMIXClass 
 ]
 
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocations [
+	^ self deepCollect: [ :entity | entity incomingInvocations collect: [ :inv | inv from ] ]
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWith: selectors [
+	| res |
+	res := {self}
+		deepCollect:
+			[ :entity | 
+			| duplicatedEntities |
+			duplicatedEntities := entity duplicatedEntities.
+			duplicatedEntities
+				flatCollect:
+					[ :aDuplicatedEntity | selectors collect: [ :aSelector | aDuplicatedEntity perform: aSelector ] ] ].
+	^ res
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCalls [
+	^ self allIncomingInvocationsWith: {#withIncomingInvocationsAndAccessCalls}
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInner [
+	^ self allIncomingInvocationsWith: #(#withInnerclassDefiningMethods  #withIncomingInvocationsAndAccessCalls)
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritance [
+	^ self
+		allIncomingInvocationsWith:
+			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withImplementMethods)
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables [
+	^ self
+		allIncomingInvocationsWith:
+			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withCallables #withImplementMethods)
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithCallable [
+	^ self allIncomingInvocationsWith: {#withCallables. #withIncommingInvocations}
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithInnerclassDefiningMethods [
+	^ self allIncomingInvocationsWith: #(#withInnerclassDefiningMethods withIncommingInvocations)
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allIncomingInvocationsWithInterfacesCalls [
+	^ self allIncomingInvocationsWith: {#withImplementMethods. #withIncommingInvocations}
+]
+
 { #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> coverJacocoMethods [
 	<MSEProperty: #coverJacocoMethods type: #FAMIXMethod opposite: #coveredByJacocoTestMethods>

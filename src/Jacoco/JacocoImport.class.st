@@ -127,11 +127,15 @@ JacocoImport >> importFile: aFileReference [
 	name := aFileReference basename.
 	methodName := aFileReference basename copyFrom: 'void ' size + 1 to: name size - 9.
 	methodNameDecomposed := methodName substrings: '.'.
-	methodName2 := ('::' join: methodNameDecomposed allButLast) , '.' , methodNameDecomposed last.
-	testMethod := model entityNamed: methodName2.
+	methodName2 := ('::' join: methodNameDecomposed allButLast) , '.'
+		, methodNameDecomposed last.
+	testMethod := (model entityNamed: methodName2)
+		ifNil: [ model entityNamed: '<Default Package>::' , methodName2 ].
 	self assert: testMethod isNotNil.
-	[ 
-	xml := JacocoSAXParser parse:  aFileReference readStream usingNamespaces: false validation: false.
+	[ xml := JacocoSAXParser
+		parse: aFileReference readStream
+		usingNamespaces: false
+		validation: false.
 	self importJacocoData: xml
 	"	self importXML: xml" ]
 		on: FileDoesNotExist
