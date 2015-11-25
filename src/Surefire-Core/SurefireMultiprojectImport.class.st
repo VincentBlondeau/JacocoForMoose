@@ -5,12 +5,13 @@ Class {
 }
 
 { #category : #'as yet unclassified' }
-SurefireMultiprojectImport >> searchMethodNamed: aMethodName inSuperclassesOf: aFAMIXClass [
-	| methods |
-	methods := aFAMIXClass superclassHierarchy
-		flatCollect: [ :c | c methods select: [ :m | m signature = aMethodName ] ].
-	self assert: methods size = 1.
-	^ methods first
+SurefireMultiprojectImport >> createMethodNamed: aMethodName inClass: aFAMIXClass [ 
+	| methodToCopy |
+	methodToCopy := self searchMethodNamed: aMethodName inSuperclassesOf: aFAMIXClass.
+	methodToCopy copy.
+self halt.
+	aMethodName 
+	aFAMIXClass find
 ]
 
 { #category : #'as yet unclassified' }

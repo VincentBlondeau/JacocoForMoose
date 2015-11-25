@@ -27,9 +27,10 @@ SurefireImport >> importTestCase: aTestCaseResult [
 				ifFalse: [ mooseClassName , '.' , (aTestCaseResult at: #testCaseName) , '()' ]).
 	methodOrClass
 		ifNil:
-			[ methodOrClass := self
+			[ {'[Surefire] Search in superclass '. (aTestCaseResult at: #testCaseName) . mooseClassName } asLog emit.
+			methodOrClass := self
 				searchMethodNamed: (aTestCaseResult at: #testCaseName) , '()'
-				inSuperclassesOf: (self model javaEntityNamed: mooseClassName) ].
+				inSuperclassesOf: (self model javaEntityNamed: mooseClassName) ].	"Because it should be an abstract test class"
 	methodOrClass testRunningTime: (aTestCaseResult at: #time ifAbsent: [ 0 ]).
 	methodOrClass testStatus: (aTestCaseResult at: #status)
 ]
@@ -47,6 +48,15 @@ SurefireImport >> importTestSuite: aFileReference [
 { #category : #'as yet unclassified' }
 SurefireImport >> isException: aString [ 
 	^ aString =  'TempTest'
+]
+
+{ #category : #'as yet unclassified' }
+SurefireImport >> searchMethodNamed: aMethodName inSuperclassesOf: aFAMIXClass [
+	| methods |
+	methods := aFAMIXClass superclassHierarchy
+		flatCollect: [ :c | c methods select: [ :m | m signature = aMethodName ] ].
+	self assert: methods size = 1.
+	^ methods first
 ]
 
 { #category : #private }
