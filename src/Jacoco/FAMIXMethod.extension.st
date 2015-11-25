@@ -39,6 +39,16 @@ FAMIXMethod >> findRelatedAttributeCommingFrom: aMethod [
 ]
 
 { #category : #'*Jacoco-Import tests' }
+FAMIXMethod >> hasAnXMLReportFromJacoco [
+	^ self privateState attributeAt: #hasAnXMLReportFromJacoco ifAbsent: [ false ]
+]
+
+{ #category : #'*Jacoco-Import tests' }
+FAMIXMethod >> hasAnXMLReportFromJacoco: aBoolean [
+	self privateState attributeAt: #hasAnXMLReportFromJacoco put: aBoolean
+]
+
+{ #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> isIgnored [
 	<MSEProperty: #isIgnored type: #Boolean>
 	<multivalued>
@@ -48,6 +58,14 @@ FAMIXMethod >> isIgnored [
 	^ "self privateState
 		attributeAt: #isIgnored
 		ifAbsentPut: [ "self isAnnotatedWith: 'Ignore' "]"
+]
+
+{ #category : #'*Jacoco-Import tests' }
+FAMIXMethod >> isMethodAnchorInTheCoreDir [
+	self flag: 'SHOULD NOT BE USED FOR JACOCOStats'.
+	^ self sourceAnchor
+		ifNil: [ self belongsTo sourceAnchor fileName includesSubstring: 'src/main' ]
+		ifNotNil: [ :sa | sa fileName includesSubstring: 'src/main' ]
 ]
 
 { #category : #'*Jacoco-Import tests' }
