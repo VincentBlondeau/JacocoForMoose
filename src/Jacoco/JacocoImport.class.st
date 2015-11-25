@@ -10,7 +10,8 @@ Class {
 { #category : #private }
 JacocoImport >> basicRun [
 	| files |
-	Transcript clear.
+	
+
 	files := self coverageXmlFiles.
 	files
 		do: [ :file | 
@@ -43,7 +44,7 @@ JacocoImport >> findClassNamedByJacoco: name [
 		entityNamed: nameWithColumns
 		ifAbsent:
 			[ 
-			self logCr: '[Jacoco] Info: Class covered: ' , name , ' not Found in model.'.
+			('[Jacoco] Info: Class covered: ' , name , ' not Found in model.') asLog emit.
 			NotFound signalFor: name ]
 ]
 
@@ -53,7 +54,7 @@ JacocoImport >> findInitializerIn: searchInCollection withClass: aClass withName
 	constructor := searchInCollection select: [ :m | m isConstructor and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
 	constructor
 		ifEmpty: [ 
-			self logCr: '[Jacoco] Info: initializer Method ' , aName , 'in Class ' , aClass mooseName , ' not Found.'.
+			('[Jacoco] Info: initializer Method ' , aName , 'in Class ' , aClass mooseName , ' not Found.') asLog emit.
 			NotFound signal ]
 		ifNotEmpty: [ 
 			selectedConstructor := constructor select: [ :m | m matchWithJacocoDescription: description ].
@@ -67,8 +68,7 @@ JacocoImport >> findMethodFromClass: aClass name: aName description: aDescriptio
 	description := self parseDescription: aDescription.
 	aName = '<init>'
 		ifTrue:
-			[ 
-			block := [ :arg | 
+			[ block := [ :arg | 
 			self
 				findInitializerIn: arg
 				withClass: aClass
@@ -77,39 +77,30 @@ JacocoImport >> findMethodFromClass: aClass name: aName description: aDescriptio
 			^ [ block value: aClass methods ]
 				on: AssertionFailure
 				do:
-					[ 
-					[ block value: aClass inheritedMethods ]
+					[ [ block value: aClass inheritedMethods ]
 						on: AssertionFailure
-						do:
-							[ NotFound signal	"Should be better parsed -> inheritance + Collection<Item>" ] ] ]
+						do: [ NotFound signal	"Should be better parsed -> inheritance + Collection<Item>" ] ] ]
 		ifFalse:
-			[ 
-			methodCovered := aClass methods
-				select:
-					[ :m | 
-					m name = aName
-						and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
+			[ methodCovered := aClass methods
+				select: [ :m | m name = aName and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
 			methodCovered
 				ifEmpty:
-					[ 
-					self
-						logCr:
-							'[Jacoco] Info: Standard Method ' , aName , 'in Class '
-								, aClass mooseName , ' not Found.'.
+					[ Log
+						info:
+							'[Jacoco] Info: Standard Method ' , aName , 'in Class ' , aClass mooseName , ' not Found.'.
 					NotFound signalFor: aName ]
 				ifNotEmpty:
-					[ 
-					methodCovered size = 1
+					[ methodCovered size = 1
 						ifFalse:
-							[ 
-							selected := methodCovered
+							[ selected := methodCovered
 								select: [ :m | m matchWithJacocoDescription: description ].
 							[ self assert: selected size = 1 ]
 								on: AssertionFailure
 								do: [ NotFound signal: aName ].
+							Log
+								info: '[Jacoco] Error: Several method found... Take random...' , methodCovered printString.
 							^ selected first
-							"self halt.
-							self logCr: '[Jacoco] Error: Several method found... Take random...' , methodCovered printString " ].
+							"self halt." ].
 					^ methodCovered first ] ]
 ]
 
@@ -132,6 +123,7 @@ JacocoImport >> importFile: aFileReference [
 	testMethod := (model entityNamed: methodName2)
 		ifNil: [ model entityNamed: '<Default Package>::' , methodName2 ].
 	self assert: testMethod isNotNil.
+	testMethod hasAnXMLReportFromJacoco: true.
 	[ xml := JacocoSAXParser
 		parse: aFileReference readStream
 		usingNamespaces: false
@@ -139,7 +131,7 @@ JacocoImport >> importFile: aFileReference [
 	self importJacocoData: xml
 	"	self importXML: xml" ]
 		on: FileDoesNotExist
-		do: [ self logCr: '[Jacoco]Error: file named ' , name , 'doesn''t exists!' ]
+		do: [ Log critical: '[Jacoco]Error: file named ' , name , 'doesn''t exists!' ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -153,16 +145,24 @@ JacocoImport >> importJacocoItem: anItem [
 	| aClass foundMethod |
 	[ aClass := self findClassNamedByJacoco: (anItem at: 'className') ]
 		on: NotFound
-		do: [ ^ self ].
-	[ 
-	foundMethod := self
+		do:
+			[ Log
+				warn:
+					{'[Jacoco] Class Covered not Found!'.
+					(anItem at: 'className')}.
+			^ self ].
+	[ foundMethod := self
 		findMethodFromClass: aClass
 		name: (anItem at: 'methodName')
 		description: (anItem at: 'methodSignature') ]
 		on: NotFound
-		do: [ ^ self ].
-	foundMethod
-		ifNotNil: [ foundMethod addCoveredByJacocoTestClass: testMethod ]
+		do:
+			[ Log
+				warn:
+					{'[Jacoco] Method Test not Found!'.
+					(anItem at: 'className')}.
+			^ self ].
+	foundMethod ifNotNil: [ foundMethod addCoveredByJacocoTestClass: testMethod ] 
 ]
 
 { #category : #'as yet unclassified' }

@@ -63,6 +63,33 @@ FAMIXBehaviouralEntity >> allIncomingInvocationsWithInterfacesCalls [
 	^ self allIncomingInvocationsWith: {#withImplementMethods. #withIncommingInvocations}
 ]
 
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allNumerotedIncomingInvocationsWith: selectors [
+	| res count |
+	count := 0.
+	res := {self}
+		deepCollect:
+			[ :entity | 
+			| duplicatedEntities |
+			duplicatedEntities := entity duplicatedEntities.
+			count := count + 1.
+			duplicatedEntities
+				flatCollect:
+					[ :aDuplicatedEntity | 
+					selectors
+						collect: [ :aSelector | 
+							aDuplicatedEntity privateState propertyAt: #count ifAbsentPut: [ count ].
+							aDuplicatedEntity perform: aSelector ] ] ].
+	^ res
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> allNumerotedIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables [
+	^ self
+		allNumerotedIncomingInvocationsWith:
+			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withCallables #withImplementMethods)
+]
+
 { #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> coverJacocoMethods [
 	<MSEProperty: #coverJacocoMethods type: #FAMIXMethod opposite: #coveredByJacocoTestMethods>
