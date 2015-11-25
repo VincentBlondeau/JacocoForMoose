@@ -115,11 +115,17 @@ ConfigurationOfJavaTestsTools >> baseline01: spec [
 	spec for: #'common' do: [
 		spec blessing: #'baseline'.
 		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
-		spec project: 'SystemLogger' with: [
+		spec 
+			project: 'SystemLogger' with: [
 				spec
 					className: #ConfigurationOfSystemLogger;
 					versionString: #'development';
-					repository: 'http://smalltalkhub.com/mc/StephaneDucasse/SystemLogger/main/' ].
+					repository: 'http://smalltalkhub.com/mc/StephaneDucasse/SystemLogger/main/' ];
+			project: 'MavenForMoose' with: [
+				spec
+					className: #ConfigurationOfMavenForMoose;
+					versionString: #'bleedingEdge';
+					repository: 'http://smalltalkhub.com/mc/VincentBlondeau/MavenForMoose/main/' ].
 		spec 
 			package: #Infinitest;
 			package: #'Surefire-Core';
