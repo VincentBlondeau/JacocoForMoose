@@ -1,6 +1,6 @@
 Class {
 	#name : #InfinitestImport,
-	#superclass : #MooseOperator,
+	#superclass : #MooseFileOperator,
 	#instVars : [
 		'testClass'
 	],
@@ -32,8 +32,8 @@ InfinitestImport >> importAssocInModel: anAssociation [
 					((items last = 'package-info' or: [ items first = 'WEB-INF' ])
 						or:
 							[ items size = 1	"should be resolved because this class is in the default package" ])
-						ifTrue: [ ^ ResumableNotFound signalFor: change ]
-						ifFalse: [ ^ ResumableNotFound signalFor: change ] ].
+						ifTrue: [ Log warn: {'[Infinitest] No class found T'. change}.^ ResumableNotFound signalFor: change ]
+						ifFalse: [ Log warn: {'[Infinitest] No class found F'. change}. ^ ResumableNotFound signalFor: change ] ].
 			candidateClass := outerCandidateClass methods
 				collect: #innerClassesImplementingMethods
 				thenSelect: #isNotEmpty.
@@ -57,7 +57,7 @@ InfinitestImport >> importAssocInModel: anAssociation [
 { #category : #accessing }
 InfinitestImport >> infinitestResultsFile [
 	| files |
-	files := 'artifacts/infinitestExport' asFileReference children.
+	files := (self rootFolder ifNil: [ 'artifacts/infinitestExport' ]) asFileReference children.
 	self assert: files size = 1.
 	^ files first
 ]
