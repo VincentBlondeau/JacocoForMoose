@@ -10,13 +10,16 @@ Class {
 { #category : #private }
 JacocoImport >> basicRun [
 	| files |
-	
-
 	files := self coverageXmlFiles.
 	files
 		do: [ :file | 
 			self importFile: file.
-			self increment ]
+			self increment ].
+	Log
+		info:
+			{'[Jacoco]Job Finished'.
+			files.
+			'parsed'}
 ]
 
 { #category : #'as yet unclassified' }
@@ -44,7 +47,7 @@ JacocoImport >> findClassNamedByJacoco: name [
 		entityNamed: nameWithColumns
 		ifAbsent:
 			[ 
-			('[Jacoco] Info: Class covered: ' , name , ' not Found in model.') asLog emit.
+			"('[Jacoco] Info: Class covered: ' , name , ' not Found in model.') asLog emit"
 			NotFound signalFor: name ]
 ]
 
@@ -85,9 +88,9 @@ JacocoImport >> findMethodFromClass: aClass name: aName description: aDescriptio
 				select: [ :m | m name = aName and: [ m numberOfArgsFromSignature = (description size - 1) ] ].
 			methodCovered
 				ifEmpty:
-					[ Log
+					[ "Log
 						info:
-							'[Jacoco] Info: Standard Method ' , aName , 'in Class ' , aClass mooseName , ' not Found.'.
+							'[Jacoco] Info: Standard Method ' , aName , 'in Class ' , aClass mooseName , ' not Found.'."
 					NotFound signalFor: aName ]
 				ifNotEmpty:
 					[ methodCovered size = 1
@@ -145,24 +148,14 @@ JacocoImport >> importJacocoItem: anItem [
 	| aClass foundMethod |
 	[ aClass := self findClassNamedByJacoco: (anItem at: 'className') ]
 		on: NotFound
-		do:
-			[ Log
-				warn:
-					{'[Jacoco] Class Covered not Found!'.
-					(anItem at: 'className')}.
-			^ self ].
+		do: [ ^ self ].
 	[ foundMethod := self
 		findMethodFromClass: aClass
 		name: (anItem at: 'methodName')
 		description: (anItem at: 'methodSignature') ]
 		on: NotFound
-		do:
-			[ Log
-				warn:
-					{'[Jacoco] Method Test not Found!'.
-					(anItem at: 'className')}.
-			^ self ].
-	foundMethod ifNotNil: [ foundMethod addCoveredByJacocoTestClass: testMethod ] 
+		do: [ ^ self ].
+	foundMethod ifNotNil: [ foundMethod addCoveredByJacocoTestClass: testMethod ]
 ]
 
 { #category : #'as yet unclassified' }

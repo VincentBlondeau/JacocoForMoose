@@ -254,7 +254,7 @@ JacocoStats >> shouldRemoveSpecificly: element [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel [
-
+self halt.
 	^ {(#numberOfCoreMethods -> self selectAllCoreMethods).
 	(#numberOfTestMethods -> self selectAllTestMethods).
 	(#LOCCovered
@@ -263,7 +263,7 @@ JacocoStats >> statsOn: aMooseModel [
 				sum: #numberOfLinesOfCode)).
 	(#numberOfJacocoTests
 		-> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
-	(#NLOCCore -> (self selectMethodsFromModel sum: #numberOfLinesOfCode)).
+	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
 	(#NLOCTest
 		->
 			((self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ])
@@ -275,7 +275,8 @@ JacocoStats >> statsOn: aMooseModel [
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallableStatsOn:
 		dicoEntry: #jacocoVSStaticWithCallables).
-	"(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest)"
+	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest)
+	.
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticStatsOn:
