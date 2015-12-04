@@ -1,43 +1,5 @@
 Extension { #name : #FAMIXMethod }
 
-{ #category : #'*Jacoco-Import - static' }
-FAMIXMethod >> findRelatedAttributeCommingFrom: aMethod [
-	| class attributes declaredTypeOfTheMethodReturn |
-	^ self name = '<Initializer>'
-		ifTrue:
-			[ class := self belongsTo.
-			declaredTypeOfTheMethodReturn := aMethod isConstructor
-				ifTrue: [ aMethod belongsTo ]
-				ifFalse: [ aMethod declaredType ].
-			attributes := class attributes
-				select:
-					[ :attribute | 
-					"self halt.
-					attribute declaredType isStub
-						ifTrue: [  ]
-						ifFalse:
-							[ "declaredTypeOfTheMethodReturn withSuperclassHierarchy
-								includes: attribute declaredType ] "]".
-			attributes
-				ifEmpty:
-					[ self sourceAnchor
-						ifNotNil:
-							[ {self.
-							aMethod} asLog
-								tag: 'findRelatedAttributeCommingFrom-empty';
-								emit.
-							^ {} ]
-						ifNil: [ "self notYetImplemented" ] ].
-			attributes size = 1
-				ifFalse:
-					[ {self.
-					aMethod} asLog
-						tag: 'findRelatedAttributeCommingFrom-sup1';
-						emit ].
-			attributes ]
-		ifFalse: [ {} ]
-]
-
 { #category : #'*Jacoco-Import tests' }
 FAMIXMethod >> hasAnXMLReportFromJacoco [
 	^ self privateState attributeAt: #hasAnXMLReportFromJacoco ifAbsent: [ false ]
@@ -58,6 +20,34 @@ FAMIXMethod >> isIgnored [
 	^ "self privateState
 		attributeAt: #isIgnored
 		ifAbsentPut: [ "self isAnnotatedWith: 'Ignore' "]"
+]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXMethod >> isInStaticPartOfTheInitializerCommingFrom: aMethod [
+	| class attributes declaredTypeOfTheMethodReturn |
+	class := self belongsTo.
+	declaredTypeOfTheMethodReturn := aMethod isConstructor
+		ifTrue: [ aMethod belongsTo ]
+		ifFalse: [ aMethod declaredType ].
+	attributes := class attributes
+		select:
+			[ :attribute | declaredTypeOfTheMethodReturn withSuperclassHierarchy includes: attribute declaredType ].
+	attributes
+		ifEmpty:
+			[ self sourceAnchor
+				ifNotNil:
+					[ ^ self hasClassScope
+						ifFalse: [ self notYetImplemented ]
+						ifTrue: [ self hasClassScope ] ]
+				ifNil: [ ^ class attributes anySatisfy: [ :attr | attr hasClassScope ] ]	"cas où l'appel n'est pas directement affecté à l'attribut" ].
+	attributes size = 1
+		ifFalse:
+			[ Log
+				warn:
+					{'[JacocoStats] More than one attribute found'.
+					self.
+					aMethod} ].
+	^ attributes anySatisfy: [ :attr | attr hasClassScope ]
 ]
 
 { #category : #'*Jacoco-Import tests' }
@@ -129,8 +119,14 @@ FAMIXMethod >> withIncomingInvocationsAndAccessCalls [
 	foundAccesses := invocationContainers
 		flatCollect:
 			[ :invocationContainer | 
-			(invocationContainer findRelatedAttributeCommingFrom: self)
-				collect: [ :e | e incomingAccesses collect: #from ] ].
+			invocationContainer name = '<Initializer>'
+				ifFalse: [ {} ]
+				ifTrue:
+					[ (invocationContainer isInStaticPartOfTheInitializerCommingFrom: self)
+						ifTrue:
+							[  "self halt." self queryAllIncoming opposites "Static"]
+						ifFalse: [ "self halt. "(self belongsTo constructors asMooseGroup queryIncoming: FAMIXInvocation)
+								opposites	"not static" ] ] ].
 	^ invocationContainers , foundAccesses select: #isNotNil
 ]
 
