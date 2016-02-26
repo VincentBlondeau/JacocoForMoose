@@ -67,6 +67,7 @@ JacocoStats >> calculateGainDataOn: res [
 	| elements numberOfTests avgWithoutZeros gainWithoutZeros gainWithZeros avgWithZeros numberOfZeros |
 
 	numberOfTests := self numberOfTestsMethodsFromModel: model. 
+	
 	elements := res collect: [ :e | self calculateGainOn: e ] thenReject: #isNil.
 	avgWithoutZeros := (elements asOrderedCollection
 		removeAllSuchThat: [ :f | f closeTo: 0.0 ];
@@ -109,12 +110,29 @@ JacocoStats >> calculatePrecisionOn: aDictionary [
 	^ prec
 ]
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> calculatePrecisionWeightedMeanOn: res [
+	| collOfWeightedElements size sum |
+	collOfWeightedElements := res
+		collect: [ :e | self calculatePrecisionWeightedOn: e ]
+		thenReject: [ :e | e first isNil ].
+	size := collOfWeightedElements sum: #second.
+	sum := collOfWeightedElements sum: [ :item | item first * item second ].
+	^ sum / size
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> calculatePrecisionWeightedOn: aCollectionOfData [
+	| recall |
+	recall := self calculatePrecisionOn: aCollectionOfData.
+	^ {recall.
+	(aCollectionOfData at: #numberOfCommits)}
+]
+
 { #category : #'metrics calculus' }
 JacocoStats >> calculateRecallMeanOn: res [
-		| elements |
-	elements := res
-		collect: [ :e | self calculateRecallOn: e ]
-		thenReject: #isNil.
+	| elements |
+	elements := res collect: [ :e | self calculateRecallOn: e ] thenReject: #isNil.
 	^ elements asOrderedCollection average
 ]
 
@@ -128,6 +146,25 @@ JacocoStats >> calculateRecallOn: aDictionary [
 		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
 	aDictionary at: #Recall put: recall.
 	^ recall
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> calculateRecallWeightedMeanOn: res [
+	| collOfWeightedElements size sum |
+	collOfWeightedElements := res
+		collect: [ :e | self calculateRecallWeightedOn: e ]
+		thenReject: [ :e | e first isNil ].
+	size := collOfWeightedElements sum: #second.
+	sum := collOfWeightedElements sum: [ :item | item first * item second ].
+	^ sum / size
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> calculateRecallWeightedOn: aCollectionOfData [
+	| recall |
+	recall := self calculateRecallOn: aCollectionOfData.
+	^ {recall.
+	(aCollectionOfData at: #numberOfCommits)}
 ]
 
 { #category : #stats }
@@ -147,9 +184,10 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	(#fn -> fn).
 	(#fp -> fp).
 	(#positives -> positives).
-	(#jacoco -> realData)	.
-	(#greenTests -> (realData collect: #testStatus) )
-		".
+	(#jacoco -> realData).
+	(#greenTests -> (realData collect: #testStatus)).
+	(#numberOfCommits -> method belongsTo numberOfCommits)
+	".
 	(#tn -> tn)"} asDictionary
 ]
 
@@ -314,24 +352,27 @@ JacocoStats >> statsOn: aMooseModel [
 
 { #category : #stats }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean res methods gainData greenTests |
+	| precisionMean recallMean res methods gainData greenTests recallWeightedMean precisionWeightedMean |
 	methods := self selectMethodsFromModel.
 	res := methods
 		collect: [ :m | self makeStatsOnMethod: m withSelector: aMethodSelector ].
 	precisionMean := self calculatePrecisionMeanOn: res.
 	recallMean := self calculateRecallMeanOn: res.
+	precisionWeightedMean := self calculatePrecisionWeightedMeanOn: res.
+	recallWeightedMean := self calculateRecallWeightedMeanOn: res.
 	gainData := self calculateGainDataOn: res.
 	greenTests := res flatCollect: [ :e | e at: #greenTests ].
 	^ dicoEntry
 		->
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
+			(#recallWeighted -> recallWeightedMean).
+			(#precisionWeighted -> precisionWeightedMean).
 			(#data -> res).
 			(#gainData -> gainData first).
 			(#gain -> gainData second).
 			(#percentageOfGreenTests
-				->
-					((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)}
+				-> ((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)}
 				asDictionary
 ]
 
