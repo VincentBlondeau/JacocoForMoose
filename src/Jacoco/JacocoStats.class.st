@@ -45,6 +45,11 @@ Class {
 	#category : #'Jacoco-TestSelection'
 }
 
+{ #category : #accessing }
+JacocoStats >> allNotStubMethods [
+	^ self model allModelMethods reject: [ :e | e isStub ]
+]
+
 { #category : #'as yet unclassified' }
 JacocoStats >> avgNumberOfMethodsCoveredByATest [
 	^ (self selectAllJacocoTestMethods
@@ -57,9 +62,19 @@ JacocoStats >> avgNumberOfTestsThatCoversAMethod [
 		average: [ :meth | meth coveredByJacocoTestMethods size ]) asFloat
 ]
 
-{ #category : #stats }
+{ #category : #'stats - generic' }
 JacocoStats >> basicRun [
 	^ self statsOn: self model
+]
+
+{ #category : #'metrics calculus' }
+JacocoStats >> calculateCommitNotNullWeightedMeanOfMetric: metricName on: res [
+	| collOfWeightedElements size sum |
+	collOfWeightedElements := res collect: [ :e | self calculateWeightedMetric: metricName on: e ] thenReject: [ :e | e first isNil or: [ e second = 0 ] ].
+	size := collOfWeightedElements sum: #second.
+	sum := collOfWeightedElements sum: [ :item | item first * item second ].
+	^ {(sum / size).
+	collOfWeightedElements}
 ]
 
 { #category : #'metrics calculus' }
@@ -90,11 +105,9 @@ JacocoStats >> calculateGainOn: aDictionary [
 ]
 
 { #category : #'metrics calculus' }
-JacocoStats >> calculatePrecisionMeanOn: res [
+JacocoStats >> calculateMeanOfMetric: metricName on: res [
 	| elements |
-	elements := res
-		collect: [ :e | self calculatePrecisionOn: e ]
-		thenReject: #isNil.
+	elements := res collect: [ :e | self perform: (self metricMethod: metricName) with: e ] thenReject: #isNil.
 	^ elements asOrderedCollection average
 ]
 
@@ -110,32 +123,6 @@ JacocoStats >> calculatePrecisionOn: aDictionary [
 	^ prec
 ]
 
-{ #category : #'as yet unclassified' }
-JacocoStats >> calculatePrecisionWeightedMeanOn: res [
-	| collOfWeightedElements size sum |
-	collOfWeightedElements := res
-		collect: [ :e | self calculatePrecisionWeightedOn: e ]
-		thenReject: [ :e | e first isNil ].
-	size := collOfWeightedElements sum: #second.
-	sum := collOfWeightedElements sum: [ :item | item first * item second ].
-	^ sum / size
-]
-
-{ #category : #'as yet unclassified' }
-JacocoStats >> calculatePrecisionWeightedOn: aCollectionOfData [
-	| recall |
-	recall := self calculatePrecisionOn: aCollectionOfData.
-	^ {recall.
-	(aCollectionOfData at: #numberOfCommits)}
-]
-
-{ #category : #'metrics calculus' }
-JacocoStats >> calculateRecallMeanOn: res [
-	| elements |
-	elements := res collect: [ :e | self calculateRecallOn: e ] thenReject: #isNil.
-	^ elements asOrderedCollection average
-]
-
 { #category : #'metrics calculus' }
 JacocoStats >> calculateRecallOn: aDictionary [
 	| tp fn recall |
@@ -148,26 +135,27 @@ JacocoStats >> calculateRecallOn: aDictionary [
 	^ recall
 ]
 
-{ #category : #'as yet unclassified' }
-JacocoStats >> calculateRecallWeightedMeanOn: res [
+{ #category : #'metrics calculus' }
+JacocoStats >> calculateWeightedMeanOfMetric: metricName on: res [
 	| collOfWeightedElements size sum |
 	collOfWeightedElements := res
-		collect: [ :e | self calculateRecallWeightedOn: e ]
+		collect: [ :e | self calculateWeightedMetric: metricName on: e ]
 		thenReject: [ :e | e first isNil ].
 	size := collOfWeightedElements sum: #second.
 	sum := collOfWeightedElements sum: [ :item | item first * item second ].
-	^ sum / size
+	^ {(sum / size).
+	collOfWeightedElements}
 ]
 
-{ #category : #'as yet unclassified' }
-JacocoStats >> calculateRecallWeightedOn: aCollectionOfData [
-	| recall |
-	recall := self calculateRecallOn: aCollectionOfData.
-	^ {recall.
+{ #category : #'metrics calculus' }
+JacocoStats >> calculateWeightedMetric: metricName on: aCollectionOfData [
+	| metricValue |
+	metricValue := self perform: (self metricMethod: metricName) with: aCollectionOfData.
+	^ {metricValue.
 	(aCollectionOfData at: #numberOfCommits)}
 ]
 
-{ #category : #stats }
+{ #category : #'stats - generic' }
 JacocoStats >> createDictionaryForMethod: method fromPostives: positives realData: realData all: all [
 	"All is set at nil because it is not needed for the experiement"
 
@@ -191,21 +179,21 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	(#tn -> tn)"} asDictionary
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 JacocoStats >> isMethodAnchorInTheCoreDir: method [
 	^ method sourceAnchor
 		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/main/' ]
 		ifNotNil: [ :sa | sa fileName includesSubstring: '/main/' ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #testing }
 JacocoStats >> isMethodAnchorInTheTestDir: method [
 	^ method sourceAnchor
 		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/test/' ]
 		ifNotNil: [ :sa | sa fileName includesSubstring: '/test/' ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'metrics calculus' }
 JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 	| mapping positives realData |
 	mapping := self mappingToMethodGetters at: aMethodSelector.
@@ -218,7 +206,7 @@ JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 		all: nil
 ]
 
-{ #category : #stats }
+{ #category : #'stats - generic' }
 JacocoStats >> mappingToMethodGetters [
 	^ {(#makeInfinitestStatsOn: -> #staticlyFoundInfinitestTestMethodsCallingMyself).
 	(#makeStaticAccessAndInnerAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance).
@@ -232,34 +220,32 @@ JacocoStats >> mappingToMethodGetters [
 	(#makeStaticCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable)} asDictionary
 ]
 
+{ #category : #'metrics calculus' }
+JacocoStats >> metricMethod: metricName [
+	^ ('calculate' , metricName , 'On:') asSymbol
+]
+
 { #category : #accessing }
 JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
-	^ (((self model allModelMethods reject: [ :e | e isStub ])
-		select:
-			[ :m | (self isMethodAnchorInTheTestDir: m) and: [ m isCoveringJacocoMethods ] ])
-		reject: self toRemove) size
+	^ ((self allNotStubMethods select: [ :m | (self isMethodAnchorInTheTestDir: m) and: [ m isCoveringJacocoMethods ] ]) reject: self toRemove) size
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 JacocoStats >> selectAllCoreMethods [
-	^ (self model allModelMethods reject: [ :e | e isStub ])
-		select:
-			[ :m | self isMethodAnchorInTheCoreDir: m ]
+	^ self allNotStubMethods select: [ :m | self isMethodAnchorInTheCoreDir: m ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 JacocoStats >> selectAllJacocoTestMethods [
-	^ (self model allModelMethods reject: [ :e | e isStub ])
+	^ self allNotStubMethods
 		select:
 			[ :m | (self isMethodAnchorInTheTestDir: m)
 				and: [ m isCoveringJacocoMethods  ] ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #accessing }
 JacocoStats >> selectAllTestMethods [
-	^ (self model allModelMethods reject: [ :e | e isStub ])
-		select:
-			[ :m | (self isMethodAnchorInTheTestDir: m) ]
+	^ self allNotStubMethods select: [ :m | self isMethodAnchorInTheTestDir: m ]
 ]
 
 { #category : #accessing }
@@ -270,11 +256,7 @@ JacocoStats >> selectMethodsCovering: method [
 
 { #category : #accessing }
 JacocoStats >> selectMethodsFromModel [
-	^ (self model allModelMethods reject: [ :e | e isStub ])
-		select:
-			[ :m | 
-			(self isMethodAnchorInTheCoreDir: m)
-				and: [ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ]
+	^ self allNotStubMethods select: [ :m | (self isMethodAnchorInTheCoreDir: m) and: [ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ]
 ]
 
 { #category : #halting }
@@ -290,7 +272,7 @@ JacocoStats >> shouldRemoveSpecificly: element [
 	^ false
 ]
 
-{ #category : #stats }
+{ #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel [
 	^ {(#numberOfCoreMethods -> self selectAllCoreMethods).
 	(#numberOfTestMethods -> self selectAllTestMethods).
@@ -350,16 +332,15 @@ JacocoStats >> statsOn: aMooseModel [
 		dicoEntry: #jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables)} asDictionary
 ]
 
-{ #category : #stats }
+{ #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
 	| precisionMean recallMean res methods gainData greenTests recallWeightedMean precisionWeightedMean |
 	methods := self selectMethodsFromModel.
-	res := methods
-		collect: [ :m | self makeStatsOnMethod: m withSelector: aMethodSelector ].
-	precisionMean := self calculatePrecisionMeanOn: res.
-	recallMean := self calculateRecallMeanOn: res.
-	precisionWeightedMean := self calculatePrecisionWeightedMeanOn: res.
-	recallWeightedMean := self calculateRecallWeightedMeanOn: res.
+	res := methods collect: [ :m | self makeStatsOnMethod: m withSelector: aMethodSelector ].
+	precisionMean := self calculateMeanOfMetric: #Precision on: res.
+	recallMean := self calculateMeanOfMetric: #Recall on: res.
+	precisionWeightedMean := self calculateWeightedMeanOfMetric: #Precision on: res.
+	recallWeightedMean := self calculateWeightedMeanOfMetric: #Recall on: res.
 	gainData := self calculateGainDataOn: res.
 	greenTests := res flatCollect: [ :e | e at: #greenTests ].
 	^ dicoEntry
@@ -368,12 +349,15 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 			(#precision -> precisionMean).
 			(#recallWeighted -> recallWeightedMean).
 			(#precisionWeighted -> precisionWeightedMean).
+			(#recallWeightedCommitNotNull
+				-> (self calculateCommitNotNullWeightedMeanOfMetric: #Recall on: res)).
+			(#precisionWeightedCommitNotNull
+				-> (self calculateCommitNotNullWeightedMeanOfMetric: #Precision on: res)).
 			(#data -> res).
 			(#gainData -> gainData first).
 			(#gain -> gainData second).
 			(#percentageOfGreenTests
-				-> ((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)}
-				asDictionary
+				-> ((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)} asDictionary
 ]
 
 { #category : #accessing }
