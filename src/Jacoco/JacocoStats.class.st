@@ -45,6 +45,51 @@ Class {
 	#category : #'Jacoco-TestSelection'
 }
 
+{ #category : #'as yet unclassified' }
+JacocoStats class >> exportToCSV: aCollection [
+	| data variables vals gain values stream writter |
+	data := aCollection select: #isDictionary.
+	variables := #(#exp #gain #gainavg #numOfZeros #precision #precisionWeighted #cor #pvalue #precisionWeightedNotNull #cor #pvalue #recall #recallWeighted #cor #pvalue #recallWeightedNotNull #cor #pvalue).
+	values := [ :dico | 
+	vals := dico value.
+	gain := vals at: #gain.
+	{dico key.
+	(gain at: #avgWithZeros).
+	(gain at: #gainWithZeros).
+	(gain at: #numberOfZeros).
+	(vals at: #precision).
+	(vals at: #precisionWeighted) first.
+	(vals at: #precisionWeighted) second first.
+	(vals at: #precisionWeighted) second second.
+	(vals at: #precisionWeightedCommitNotNull) first.
+	(vals at: #precisionWeightedCommitNotNull) second first.
+	(vals at: #precisionWeightedCommitNotNull) second second.
+	(vals at: #recall).
+	(vals at: #recallWeighted) first.
+	(vals at: #recallWeighted) second first.
+	(vals at: #recallWeighted) second second.
+	(vals at: #recallWeightedCommitNotNull) first.
+	(vals at: #recallWeightedCommitNotNull) second first.
+	(vals at: #recallWeightedCommitNotNull) second second} ].
+	[ stream := StandardFileStream forceNewFileNamed: 'C:\tmp\export-dico.csv'.
+	writter := (NeoCSVWriter on: stream)
+		separator: $;;
+		nextPut: variables;
+		yourself.
+	data associationsDo: [ :aDico | writter nextPut: (values value: aDico) ] ]
+		ensure: [ stream close ]
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats class >> isRConnectorAvailable [
+	^ Smalltalk globals
+		at: #RObject
+		ifPresent: [ 'library' asREval: {'car'. }.
+			'library' asREval: {'ggplot2'. }.
+			true ]
+		ifAbsent: [ false ]
+]
+
 { #category : #accessing }
 JacocoStats >> allNotStubMethods [
 	^ self model allModelMethods reject: [ :e | e isStub ]
@@ -70,26 +115,41 @@ JacocoStats >> basicRun [
 { #category : #'metrics calculus' }
 JacocoStats >> calculateCommitNotNullWeightedMeanOfMetric: metricName on: res [
 	| collOfWeightedElements size sum |
-	collOfWeightedElements := res collect: [ :e | self calculateWeightedMetric: metricName on: e ] thenReject: [ :e | e first isNil or: [ e second = 0 ] ].
+	collOfWeightedElements := res collect: [ :e | self calculateWeightedMetric: metricName on: e ] thenReject: [ :e | e first isNil or: [ e second <= 1 ] ].
 	size := collOfWeightedElements sum: #second.
 	sum := collOfWeightedElements sum: [ :item | item first * item second ].
-	^ {(sum / size).
+	^ {(sum / size) round: 4. self calculateCor: collOfWeightedElements.
 	collOfWeightedElements}
+]
+
+{ #category : #'metrics calculus' }
+JacocoStats >> calculateCor: collOfWeightedElements [
+	| metric nbCommits cor |
+	^ self class isRConnectorAvailable
+		ifTrue:
+			[ metric := collOfWeightedElements collect: #first as: OrderedCollection.
+			nbCommits := collOfWeightedElements collect: #second as: OrderedCollection.
+			cor := 'cor.test'
+				asREval:
+					{metric asOrderedCollection.
+					nbCommits asOrderedCollection}.
+			{(cor at: 'estimate') asObject round: 4.
+			(cor at: 'p.value') asObject round: 4.
+			(cor at: 'conf.int') asObject collect: [:e | e round: 4] } ]
+		ifFalse: [ nil ]
 ]
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculateGainDataOn: res [
 	| elements numberOfTests avgWithoutZeros gainWithoutZeros gainWithZeros avgWithZeros numberOfZeros |
-
-	numberOfTests := self numberOfTestsMethodsFromModel: model. 
-	
+	numberOfTests := self numberOfTestsMethodsFromModel: model.
 	elements := res collect: [ :e | self calculateGainOn: e ] thenReject: #isNil.
 	avgWithoutZeros := (elements asOrderedCollection
 		removeAllSuchThat: [ :f | f closeTo: 0.0 ];
-		yourself) average.
-	gainWithoutZeros := 1 - (avgWithoutZeros / numberOfTests).
-	gainWithZeros := 1 - (elements average / numberOfTests).
-	avgWithZeros := elements average.
+		yourself) average round: 3.
+	gainWithoutZeros := 1 - (avgWithoutZeros / numberOfTests) round: 3.
+	gainWithZeros := 1 - (elements average / numberOfTests) round: 3.
+	avgWithZeros := elements average round: 3.
 	numberOfZeros := elements asOrderedCollection occurrencesOf: 0.
 	^ {elements asBag.
 	{(#avgWithoutZeros -> avgWithoutZeros).
@@ -108,7 +168,7 @@ JacocoStats >> calculateGainOn: aDictionary [
 JacocoStats >> calculateMeanOfMetric: metricName on: res [
 	| elements |
 	elements := res collect: [ :e | self perform: (self metricMethod: metricName) with: e ] thenReject: #isNil.
-	^ elements asOrderedCollection average
+	^ elements asOrderedCollection average round: 4
 ]
 
 { #category : #'metrics calculus' }
@@ -143,7 +203,7 @@ JacocoStats >> calculateWeightedMeanOfMetric: metricName on: res [
 		thenReject: [ :e | e first isNil ].
 	size := collOfWeightedElements sum: #second.
 	sum := collOfWeightedElements sum: [ :item | item first * item second ].
-	^ {(sum / size).
+	^ {(sum / size) round: 4. self calculateCor: collOfWeightedElements.
 	collOfWeightedElements}
 ]
 
