@@ -212,7 +212,7 @@ JacocoStats >> calculateWeightedMetric: metricName on: aCollectionOfData [
 	| metricValue |
 	metricValue := self perform: (self metricMethod: metricName) with: aCollectionOfData.
 	^ {metricValue.
-	(aCollectionOfData at: #numberOfCommits)}
+	(aCollectionOfData at: #numberOfCommits). aCollectionOfData at: #method}
 ]
 
 { #category : #'stats - generic' }

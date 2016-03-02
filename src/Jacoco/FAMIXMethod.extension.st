@@ -122,11 +122,14 @@ FAMIXMethod >> withIncomingInvocationsAndAccessCalls [
 			invocationContainer name = '<Initializer>'
 				ifFalse: [ {} ]
 				ifTrue:
-					[ (invocationContainer isInStaticPartOfTheInitializerCommingFrom: self)
-						ifTrue:
-							[  "self halt." self queryAllIncoming opposites "Static"]
-						ifFalse: [ "self halt. "(self belongsTo constructors asMooseGroup queryIncoming: FAMIXInvocation)
-								opposites	"not static" ] ] ].
+					[ (invocationContainer
+						isInStaticPartOfTheInitializerCommingFrom: self)
+						ifTrue: [ Log info: {'static'.self . self belongsTo queryAllIncomingAssociations opposites}. self  belongsTo queryAllIncomingAssociations opposites	"Static" ]
+						ifFalse:
+							[ Log info: {'not static'.self .self belongsTo constructors
+								flatCollect: [ :m | m invokingBehaviours ]}.self belongsTo constructors
+								flatCollect: [ :m | m invokingBehaviours ]	"queryIncoming: FAMIXInvocation)
+								opposites	"	"not static" ]	"self halt."	"self halt. " ] ].
 	^ invocationContainers , foundAccesses select: #isNotNil
 ]
 
