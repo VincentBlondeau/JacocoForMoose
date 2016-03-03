@@ -28,8 +28,10 @@ JacocoCommitImporter >> createModelFrom: aString [
 		do:
 			[ :aLine | 
 			| col fileEntry |
-			col := aLine substrings: ';'.
-			fileEntry := dico at: ('/', col first) asPath ifAbsentPut: [ Dictionary new ].
+			col := ';' split: aLine.
+			fileEntry := dico
+				at: ('/' , col first) asPath
+				ifAbsentPut: [ Dictionary new ].
 			fileEntry
 				at: (col fifth asNumber to: col sixth asNumber)
 				put:
@@ -57,17 +59,22 @@ JacocoCommitImporter >> foundChangesMatches: aChangeInterval in: lines [
 
 { #category : #private }
 JacocoCommitImporter >> link: aChange with: linesAndFiles [
-	| lines famixEntitiesToRetrive |
-	lines := linesAndFiles at: aChange file name asPath.
+	| lines famixEntitiesToRetrive collOfFamixEntities |
+	lines := linesAndFiles
+		at: aChange file name asPath
+		ifAbsent:
+			[ Transcript logCr: 'FILE NOT FOUND!!! ' , aChange file name.
+			^ nil ].
 	famixEntitiesToRetrive := aChange linesChanged
 		flatCollect:
 			[ :aChangeInterval | self foundChangesMatches: aChangeInterval in: lines ]
 		as: Set.
-	^ aChange
-		addAllModifiedEntities:
-			(self
-				retrieveFamixEntities: famixEntitiesToRetrive
-				in: aChange file famixEntity)
+	collOfFamixEntities := self
+		retrieveFamixEntities: famixEntitiesToRetrive
+		in: aChange file famixEntity.
+	(collOfFamixEntities isEmpty and: [ aChange file famixEntity isNil ])
+		ifTrue: [ ^ nil ].
+	^ aChange addAllModifiedEntities: collOfFamixEntities
 ]
 
 { #category : #'as yet unclassified' }
@@ -77,31 +84,20 @@ JacocoCommitImporter >> matchSignature: aSignatureWithChevron with: aSignatureWi
 		ifTrue: [ ^ true ].
 	(aSignatureWithChevron includes: $<)
 		ifFalse: [ ^ false ].
-	signature := (aSignatureWithChevron copy
-		copyWithRegex: '<[^>]*>'
-		matchesReplacedWith: '') copyReplaceAll: '>' with: ''.
-		self halt.^ signature = aSignatureWithoutChevron
+	signature := (aSignatureWithChevron copy copyWithRegex: '<[^>]*>' matchesReplacedWith: '')
+		copyReplaceAll: '>'
+		with: ''.
+	^ signature = aSignatureWithoutChevron
 ]
 
 { #category : #'as yet unclassified' }
 JacocoCommitImporter >> retrieveFamixEntities: aCollection in: aFAMIXClass [
-	| children  name  |
 	^ aCollection
 		collect:
-			[ :entityToFind | 
-			children := aFAMIXClass jacocoChildren
-				add: aFAMIXClass;
-				yourself.
-			name := entityToFind at: #itemName.
-			[ "fast search"
-			(entityToFind at: #type) = 'C'
-				ifTrue:
-					[ children detect: [ :e | e isClass and: [ e name = name ] ] ]
-				ifFalse:
-					[ children
-						detect:
-							[ :e | e isMethod and: [ (e parentType name , '.' , e signature) = name  ] ] ] 
-				]	on: NotFound do: ["less fast" self searchInModel: entityToFind ]]
+			[ :entityToFind | self retrieveFamixEntity: entityToFind in: aFAMIXClass ]
+		thenReject: #isNil
+	"fast search"
+	"less fast"
 ]
 
 { #category : #'as yet unclassified' }
@@ -118,7 +114,7 @@ JacocoCommitImporter >> retrieveFamixEntity: entityToFind in: aFAMIXClass [
 		ifTrue:
 			[ children detect: [ :e | e isClass and: [ e name = name ] ] ]
 		ifFalse:
-			[ self halt. children 
+			[ children 
 				detect:
 					[ :e | e isMethod and: [ (e parentType name , '.' , e signature) = name ] ] ] ]
 		on: NotFound
@@ -132,7 +128,7 @@ JacocoCommitImporter >> searchInModel: aCollection [
 	classOrMethod := aCollection at: #itemName.
 	classOrMethodSubStrings := classOrMethod substrings: '.'.
 	classOrMethodSubStrings size > 2
-		ifTrue: [ self halt ].
+		ifTrue: [ Transcript logCr: 'numberOfSubstrings>2:' ].
 	class := classOrMethodSubStrings first.
 	^ self model
 		entityNamed: package , '::' , classOrMethod
@@ -143,15 +139,19 @@ JacocoCommitImporter >> searchInModel: aCollection [
 					[ candidatesClasses := self model allClasses
 						select: [ :c | c name = class ].
 					candidatesClasses ifEmpty: [ ^ nil ].
-					self halt ]
+					candidatesClasses size = 1
+						ifTrue: [ ^ candidatesClasses first ].
+					^ nil]
 				ifPresent:
 					[ :e | 
-					| method |
-					class := self model entityNamed: package , '::' , class.
+					| method famixClass |
+					famixClass := self model
+						entityNamed: package , '::' , class
+						ifAbsent: [ ^ nil ].
 					(aCollection at: #type) = #C
 						ifTrue: [ ^ class ].
-					method := classOrMethodSubStrings second.
-					^ self searchMethod: method in: class ].
+					method := '.' join: classOrMethodSubStrings allButFirst.
+					^ self searchMethod: method in: famixClass ].
 			self halt ]
 ]
 
@@ -159,6 +159,6 @@ JacocoCommitImporter >> searchInModel: aCollection [
 JacocoCommitImporter >> searchMethod: aString in: aFAMIXClass [
 	^ aFAMIXClass methods , aFAMIXClass innerMethods
 		detect: [ :m | self matchSignature: m signature with: aString ]
-		ifNone: [ self halt.
+		ifNone: [ Transcript logCr: 'Not found searchMethod:', aString, ' in ', aFAMIXClass printString.
 			nil ]
 ]

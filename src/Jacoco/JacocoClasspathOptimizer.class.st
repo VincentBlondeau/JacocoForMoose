@@ -5,6 +5,16 @@ Class {
 }
 
 { #category : #'as yet unclassified' }
+JacocoClasspathOptimizer class >> optimiseFromFileNamed: toOptimize toFile: optimized [
+	| contents classPath stream |
+	contents := toOptimize asFileReference readStream contents.
+	classPath := (contents substrings: ';') allButFirst asSet.
+	stream := optimized asFileReference writeStream.
+	[ classPath do: [ :e | stream << e ] separatedBy: [ stream crlf ] ]
+		ensure: [ stream close ]
+]
+
+{ #category : #'as yet unclassified' }
 JacocoClasspathOptimizer class >> optimiseFromFileNamed: toOptimize toFile: optimized separator: sep [
 	| contents classPath stream |
 	contents := toOptimize asFileReference readStream contents.
