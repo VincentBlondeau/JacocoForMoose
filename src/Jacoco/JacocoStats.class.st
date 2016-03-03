@@ -140,6 +140,18 @@ JacocoStats >> calculateCor: collOfWeightedElements [
 ]
 
 { #category : #'metrics calculus' }
+JacocoStats >> calculateFineGrainedWeightedMeanOfMetric: metricName on: res [
+	| collOfWeightedElements size sum |
+	collOfWeightedElements := res
+		collect: [ :e | self calculateWeightedMetric: metricName on: e ]
+		thenReject: [ :e | e first isNil ].
+	size := collOfWeightedElements sum: #fourth.
+	sum := collOfWeightedElements sum: [ :item | item first * item fourth ].
+	^ {(sum / size) round: 4. self calculateCor: collOfWeightedElements.
+	collOfWeightedElements}
+]
+
+{ #category : #'metrics calculus' }
 JacocoStats >> calculateGainDataOn: res [
 	| elements numberOfTests avgWithoutZeros gainWithoutZeros gainWithZeros avgWithZeros numberOfZeros |
 	numberOfTests := self numberOfTestsMethodsFromModel: model.
@@ -212,7 +224,28 @@ JacocoStats >> calculateWeightedMetric: metricName on: aCollectionOfData [
 	| metricValue |
 	metricValue := self perform: (self metricMethod: metricName) with: aCollectionOfData.
 	^ {metricValue.
-	(aCollectionOfData at: #numberOfCommits). aCollectionOfData at: #method}
+	(aCollectionOfData at: #numberOfCommits).
+	(aCollectionOfData at: #method).
+	(aCollectionOfData at: #numberOfFineGrainedCommits)}
+]
+
+{ #category : #'stats - generic' }
+JacocoStats >> createDictionaryForCommit: commit fromPostives: positives realData: realData all: all [
+	"All is set at nil because it is not needed for the experiement"
+
+	| tp fn fp |
+	tp := positives intersection: realData.
+	fn := realData difference: positives.
+	fp := positives difference: realData.
+	"tn := (all difference: realData) difference: positives."
+	"nom - couverte - tp & cie"
+	^ {(#commit -> commit).
+	(#mooseName -> commit mooseName).
+	(#tp -> tp).
+	(#fn -> fn).
+	(#fp -> fp).
+	(#positives -> positives).
+	(#jacoco -> realData)} asDictionary
 ]
 
 { #category : #'stats - generic' }
@@ -234,7 +267,8 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	(#positives -> positives).
 	(#jacoco -> realData).
 	(#greenTests -> (realData collect: #testStatus)).
-	(#numberOfCommits -> method belongsTo numberOfCommits)
+	(#numberOfCommits -> method belongsTo numberOfCommits).
+	(#numberOfFineGrainedCommits -> method numberOfFineGrainedCommits)
 	".
 	(#tn -> tn)"} asDictionary
 ]
@@ -251,6 +285,28 @@ JacocoStats >> isMethodAnchorInTheTestDir: method [
 	^ method sourceAnchor
 		ifNil: [ method belongsTo sourceAnchor fileName beginsWith: '/test/' ]
 		ifNotNil: [ :sa | sa fileName includesSubstring: '/test/' ]
+]
+
+{ #category : #'metrics calculus' }
+JacocoStats >> makeStatsOnCommit: commit withSelector: aMethodSelector [
+	| mapping  res |
+	mapping := self mappingToMethodGetters at: aMethodSelector.
+	res := Dictionary new
+		at: #positives put: Set new;
+		at: #realData put: Set new;
+		yourself.
+	commit allChangedMethods
+		do:
+			[ :aMethod | 
+			(res at: #positives)
+				add: ((aMethod perform: mapping) reject: self toRemove).
+			(res at: #realData) add: (self selectMethodsCovering: aMethod) ].
+	
+	^ self
+		createDictionaryForCommit: commit
+		fromPostives: (res at: #positives)
+		realData: (res at: #realData)
+		all: nil
 ]
 
 { #category : #'metrics calculus' }
@@ -308,6 +364,11 @@ JacocoStats >> selectAllTestMethods [
 	^ self allNotStubMethods select: [ :m | self isMethodAnchorInTheTestDir: m ]
 ]
 
+{ #category : #'as yet unclassified' }
+JacocoStats >> selectCommitsFromModel [
+	^ self model allJavaCommits
+]
+
 { #category : #accessing }
 JacocoStats >> selectMethodsCovering: method [
 	^ (method coveredByJacocoTestMethods select: [ :m | m isNotIgnoredTest ])
@@ -350,26 +411,19 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
+	(#numberOfClassCommits -> (self allNotStubMethods sum: [ :e | e belongsTo numberOfCommits ])).
+	(#numberOfMethodCommits -> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ])).
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallableStatsOn:
 		dicoEntry: #jacocoVSStaticWithCallables).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeInfinitestStatsOn:
-		dicoEntry: #jacocoVSInfinitest).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticStatsOn:
-		dicoEntry: #jacocoVSStatic).
+	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #jacocoVSInfinitest).
+	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #jacocoVSStatic).
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallAndInheritanceStatsOn:
 		dicoEntry: #jacocoVSStaticWithInheritance).
-	(self
-		statsOn: aMooseModel
-		methodSelector: #makeStaticClassStatsOn:
-		dicoEntry: #jacocoVSStaticClass).
+	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #jacocoVSStaticClass).
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticInnerclassesStatsOn:
@@ -394,30 +448,56 @@ JacocoStats >> statsOn: aMooseModel [
 
 { #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean res methods gainData greenTests recallWeightedMean precisionWeightedMean |
+	| precisionMean recallMean resMethod resCommit methods gainData greenTests recallWeightedMean precisionWeightedMean |
 	methods := self selectMethodsFromModel.
-	res := methods collect: [ :m | self makeStatsOnMethod: m withSelector: aMethodSelector ].
-	precisionMean := self calculateMeanOfMetric: #Precision on: res.
-	recallMean := self calculateMeanOfMetric: #Recall on: res.
-	precisionWeightedMean := self calculateWeightedMeanOfMetric: #Precision on: res.
-	recallWeightedMean := self calculateWeightedMeanOfMetric: #Recall on: res.
-	gainData := self calculateGainDataOn: res.
-	greenTests := res flatCollect: [ :e | e at: #greenTests ].
+	resMethod := methods
+		collect:
+			[ :m | self makeStatsOnMethod: m withSelector: aMethodSelector ].
+	resCommit := self selectCommitsFromModel
+		collect:
+			[ :m | self makeStatsOnCommit: m withSelector: aMethodSelector ].
+	precisionMean := self calculateMeanOfMetric: #Precision on: resMethod.
+	recallMean := self calculateMeanOfMetric: #Recall on: resMethod.
+	precisionWeightedMean := self
+		calculateWeightedMeanOfMetric: #Precision
+		on: resMethod.
+	recallWeightedMean := self
+		calculateWeightedMeanOfMetric: #Recall
+		on: resMethod.
+	gainData := self calculateGainDataOn: resMethod.
+	greenTests := resMethod flatCollect: [ :e | e at: #greenTests ].
 	^ dicoEntry
 		->
 			{(#recall -> recallMean).
 			(#precision -> precisionMean).
 			(#recallWeighted -> recallWeightedMean).
 			(#precisionWeighted -> precisionWeightedMean).
+			(#precisionCommitMeaned
+				->
+					(self calculateMeanOfMetric: #Precision on: resCommit)).
+			(#recallCommitMeaned
+				->
+					(self calculateMeanOfMetric: #Recall on: resCommit)).
+					
+			(#precisionFineGrainedWeightedMean
+				->
+					(self calculateFineGrainedWeightedMeanOfMetric: #Precision on: resMethod)).
+			(#recallFineGrainedWeightedMean
+				->
+					(self calculateFineGrainedWeightedMeanOfMetric: #Recall on: resMethod)).
 			(#recallWeightedCommitNotNull
-				-> (self calculateCommitNotNullWeightedMeanOfMetric: #Recall on: res)).
+				->
+					(self calculateCommitNotNullWeightedMeanOfMetric: #Recall on: resMethod)).
 			(#precisionWeightedCommitNotNull
-				-> (self calculateCommitNotNullWeightedMeanOfMetric: #Precision on: res)).
-			(#data -> res).
+				->
+					(self calculateCommitNotNullWeightedMeanOfMetric: #Precision on: resMethod)).
+			(#data -> resMethod).
 			(#gainData -> gainData first).
 			(#gain -> gainData second).
 			(#percentageOfGreenTests
-				-> ((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)} asDictionary
+				->
+					((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)}
+				asDictionary
 ]
 
 { #category : #accessing }
