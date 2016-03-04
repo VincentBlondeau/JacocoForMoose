@@ -124,10 +124,23 @@ FAMIXMethod >> withIncomingInvocationsAndAccessCalls [
 				ifTrue:
 					[ (invocationContainer
 						isInStaticPartOfTheInitializerCommingFrom: self)
-						ifTrue: [ Log info: {'static'.self . self belongsTo queryAllIncomingAssociations opposites}. self  belongsTo queryAllIncomingAssociations opposites	"Static" ]
+						ifTrue:
+							[ Log
+								info:
+									{'static'.
+									self.
+									invocationContainer belongsTo queryAllIncomingAssociations
+										opposites reject: #isClass}.
+							invocationContainer belongsTo queryAllIncomingAssociations
+								opposites reject: #isClass	"Static" ]
 						ifFalse:
-							[ Log info: {'not static'.self .self belongsTo constructors
-								flatCollect: [ :m | m invokingBehaviours ]}.self belongsTo constructors
+							[ Log
+								info:
+									{'not static'.
+									self.
+									(self belongsTo constructors
+										flatCollect: [ :m | m invokingBehaviours ])}.
+							self belongsTo constructors
 								flatCollect: [ :m | m invokingBehaviours ]	"queryIncoming: FAMIXInvocation)
 								opposites	"	"not static" ]	"self halt."	"self halt. " ] ].
 	^ invocationContainers , foundAccesses select: #isNotNil

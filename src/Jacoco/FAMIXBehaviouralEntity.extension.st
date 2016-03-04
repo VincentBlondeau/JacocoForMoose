@@ -20,7 +20,9 @@ FAMIXBehaviouralEntity >> allIncomingInvocationsWith: selectors [
 			duplicatedEntities := entity duplicatedEntities.
 			duplicatedEntities
 				flatCollect:
-					[ :aDuplicatedEntity | selectors collect: [ :aSelector | aDuplicatedEntity perform: aSelector ] ] ].
+					[ :aDuplicatedEntity | 
+					selectors
+						collect: [ :aSelector | aDuplicatedEntity perform: aSelector ] ] ].
 	^ res
 ]
 
@@ -126,8 +128,7 @@ FAMIXBehaviouralEntity >> duplicatedEntities [
 	^ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
 		includes: self belongsTo)
 		ifTrue:
-			[ self belongsTo methods
-				select: [ :m | m signature = self signature ] ]
+			[ self belongsTo methods select: [ :m | m signature = self signature ] ]
 		ifFalse: [ {self} ]
 ]
 
