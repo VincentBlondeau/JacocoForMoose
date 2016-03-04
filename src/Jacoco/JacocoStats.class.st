@@ -48,16 +48,20 @@ Class {
 
 { #category : #'as yet unclassified' }
 JacocoStats class >> exportToCSV: aCollection [
-	| data variables vals gain values stream writter |
+	| data variables vals gain values stream writter gainCommit |
 	data := aCollection select: #isDictionary.
-	variables := #(#Exp #Gain #Gainavg #NumOfZeros #Precision #PrecisionCommitMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #PrecisionWeightedNotNull #cor #pvalue #Recall #RecallCommitMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #RecallWeightedNotNull #cor #pvalue).
+	variables := #(#Exp #Gain #Gainavg #NumOfZeros #GainCommit #GainCommitavg #CommitNumOfZeros #Precision #PrecisionCommitMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #PrecisionWeightedNotNull #cor #pvalue #Recall #RecallCommitMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #RecallWeightedNotNull #cor #pvalue).
 	values := [ :dico | 
 	vals := dico value.
 	gain := vals at: #gain.
+	gainCommit := vals at: #gainCommit.
 	{dico key.
 	(gain at: #avgWithZeros).
 	(gain at: #gainWithZeros).
 	(gain at: #numberOfZeros).
+	(gainCommit at: #avgWithZeros).
+	(gainCommit at: #gainWithZeros).
+	(gainCommit at: #numberOfZeros).
 	(vals at: #precision).
 	(vals at: #precisionCommitMeaned).
 	(vals at: #precisionFineGrainedWeightedMean) first.
@@ -471,7 +475,7 @@ JacocoStats >> statsOn: aMooseModel [
 
 { #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean resMethod resCommit methods gainData greenTests recallWeightedMean precisionWeightedMean |
+	| precisionMean recallMean resMethod resCommit methods gainData greenTests recallWeightedMean precisionWeightedMean gainCommit |
 	methods := self selectMethodsFromModel.
 	resMethod := methods
 		collect:
@@ -488,6 +492,7 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 		calculateWeightedMeanOfMetric: #Recall
 		on: resMethod.
 	gainData := self calculateGainDataOn: resMethod.
+	gainCommit := self calculateGainDataOn: resCommit.
 	greenTests := resMethod flatCollect: [ :e | e at: #greenTests ].
 	^ dicoEntry
 		->
@@ -496,12 +501,9 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 			(#recallWeighted -> recallWeightedMean).
 			(#precisionWeighted -> precisionWeightedMean).
 			(#precisionCommitMeaned
-				->
-					(self calculateMeanOfMetric: #Precision on: resCommit)).
+				-> (self calculateMeanOfMetric: #Precision on: resCommit)).
 			(#recallCommitMeaned
-				->
-					(self calculateMeanOfMetric: #Recall on: resCommit)).
-					
+				-> (self calculateMeanOfMetric: #Recall on: resCommit)).
 			(#precisionFineGrainedWeightedMean
 				->
 					(self calculateFineGrainedWeightedMeanOfMetric: #Precision on: resMethod)).
@@ -515,7 +517,10 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 				->
 					(self calculateCommitNotNullWeightedMeanOfMetric: #Precision on: resMethod)).
 			(#data -> resMethod).
+			(#dataCommit -> resCommit).
 			(#gainData -> gainData first).
+			(#gainCommitData -> gainCommit first).
+			(#gainCommit -> gainCommit second).
 			(#gain -> gainData second).
 			(#percentageOfGreenTests
 				->

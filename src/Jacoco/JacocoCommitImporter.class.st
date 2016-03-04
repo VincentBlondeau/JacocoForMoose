@@ -91,6 +91,16 @@ JacocoCommitImporter >> matchSignature: aSignatureWithChevron with: aSignatureWi
 ]
 
 { #category : #'as yet unclassified' }
+JacocoCommitImporter >> retrieveFamixEntities: aCollection in: aFAMIXClass [
+	^ aCollection
+		collect:
+			[ :entityToFind | self retrieveFamixEntity: entityToFind in: aFAMIXClass ]
+		thenReject: #isNil
+	"fast search"
+	"less fast"
+]
+
+{ #category : #'as yet unclassified' }
 JacocoCommitImporter >> retrieveFamixEntity: entityToFind in: aFAMIXClass [
 	| children name |
 	"exceptions"
