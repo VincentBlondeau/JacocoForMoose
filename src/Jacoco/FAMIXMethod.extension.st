@@ -106,10 +106,13 @@ FAMIXMethod >> withCallables [
 FAMIXMethod >> withImplementMethods [
 	"or overriding"
 
-	^ (OrderedCollection new
-		add: self;
-		addAll: self overridesMethod;
-		yourself) select: #isNotNil
+	^ self privateState
+		cacheAt: #withImplementMethods
+		ifAbsentPut:
+			[ (OrderedCollection new
+				add: self;
+				addAll: self overridesMethod;
+				yourself) select: #isNotNil ]
 ]
 
 { #category : #'*Jacoco-Import - static' }
@@ -148,7 +151,9 @@ FAMIXMethod >> withIncomingInvocationsAndAccessCalls [
 
 { #category : #'*Jacoco-Import - static' }
 FAMIXMethod >> withIncommingInvocations [
-	^ self incomingInvocations collect: #from.
+	^ self privateState
+		cacheAt: #withIncommingInvocations
+		ifAbsentPut: [ self incomingInvocations collect: #from ]
 ]
 
 { #category : #'*Jacoco-Import - static' }

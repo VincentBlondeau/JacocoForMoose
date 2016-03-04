@@ -40,7 +40,8 @@ Class {
 	#superclass : #MooseOperator,
 	#instVars : [
 		'index',
-		'testGetterSetter'
+		'testGetterSetter',
+		'cache'
 	],
 	#category : #'Jacoco-TestSelection'
 }
@@ -100,7 +101,7 @@ JacocoStats class >> isRConnectorAvailable [
 
 { #category : #accessing }
 JacocoStats >> allNotStubMethods [
-	^ self model allModelMethods reject: [ :e | e isStub ]
+	^ cache at: #allNotStubMethods ifAbsentPut: [self model allModelMethods reject: [ :e | e isStub ]]
 ]
 
 { #category : #'as yet unclassified' }
@@ -281,6 +282,12 @@ JacocoStats >> createDictionaryForMethod: method fromPostives: positives realDat
 	(#tn -> tn)"} asDictionary
 ]
 
+{ #category : #halting }
+JacocoStats >> initialize [
+	super initialize.
+	cache := Dictionary new
+]
+
 { #category : #testing }
 JacocoStats >> isMethodAnchorInTheCoreDir: method [
 	^ method sourceAnchor
@@ -356,7 +363,7 @@ JacocoStats >> numberOfTestsMethodsFromModel: aMooseModel [
 
 { #category : #accessing }
 JacocoStats >> selectAllCoreMethods [
-	^ self allNotStubMethods select: [ :m | self isMethodAnchorInTheCoreDir: m ]
+	^ cache at: #selectAllCoreMethods ifAbsentPut: [self allNotStubMethods select: [ :m | self isMethodAnchorInTheCoreDir: m ]]
 ]
 
 { #category : #accessing }
@@ -369,7 +376,7 @@ JacocoStats >> selectAllJacocoTestMethods [
 
 { #category : #accessing }
 JacocoStats >> selectAllTestMethods [
-	^ self allNotStubMethods select: [ :m | self isMethodAnchorInTheTestDir: m ]
+	^ cache at: #selectAllTestMethods ifAbsentPut: [ self allNotStubMethods select: [ :m | self isMethodAnchorInTheTestDir: m ]]
 ]
 
 { #category : #'as yet unclassified' }
@@ -385,7 +392,15 @@ JacocoStats >> selectMethodsCovering: method [
 
 { #category : #accessing }
 JacocoStats >> selectMethodsFromModel [
-	^ self allNotStubMethods select: [ :m | (self isMethodAnchorInTheCoreDir: m) and: [ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ]
+	^ cache
+		at: #selectMethodsFromModel
+		ifAbsentPut:
+			[ self allNotStubMethods
+				select:
+					[ :m | 
+					(self isMethodAnchorInTheCoreDir: m)
+						and:
+							[ m isCoveredByJacocoTestMethodsByRejecting: self toRemove ] ] ]
 ]
 
 { #category : #halting }

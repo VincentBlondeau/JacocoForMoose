@@ -125,11 +125,15 @@ FAMIXBehaviouralEntity >> coveredByTestClassesWithoutSomeClasses [
 
 { #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> duplicatedEntities [
-	^ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
-		includes: self belongsTo)
-		ifTrue:
-			[ self belongsTo methods select: [ :m | m signature = self signature ] ]
-		ifFalse: [ {self} ]
+	^ self privateState
+		cacheAt: #duplicatedEntities
+		ifAbsentPut:
+			[ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
+				includes: self belongsTo)
+				ifTrue:
+					[ self belongsTo methods
+						select: [ :m | m signature = self signature ] ]
+				ifFalse: [ {self} ] ]
 ]
 
 { #category : #'*Jacoco-Import' }
@@ -251,17 +255,33 @@ FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner [
-	^ self allIncomingInvocationsWithAccessCallsAndInner , {self} select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner
+		ifAbsentPut:
+			[ self allIncomingInvocationsWithAccessCallsAndInner , {self}
+				select: #isCoveringJacocoMethods ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance [
-	^ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance , {self} select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance
+		ifAbsentPut:
+			[ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritance
+				, {self} select: #isCoveringJacocoMethods ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable [
-	^ self allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables , {self} select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable
+		ifAbsentPut:
+			[ self
+				allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables
+				, {self} select: #isCoveringJacocoMethods ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
