@@ -49,7 +49,7 @@ Class {
 JacocoStats class >> exportToCSV: aCollection [
 	| data variables vals gain values stream writter |
 	data := aCollection select: #isDictionary.
-	variables := #(#exp #gain #gainavg #numOfZeros #precision #precisionWeighted #cor #pvalue #precisionWeightedNotNull #cor #pvalue #recall #recallWeighted #cor #pvalue #recallWeightedNotNull #cor #pvalue).
+	variables := #(#Exp #Gain #Gainavg #NumOfZeros #Precision #PrecisionCommitMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #PrecisionWeightedNotNull #cor #pvalue #Recall #RecallCommitMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #RecallWeightedNotNull #cor #pvalue).
 	values := [ :dico | 
 	vals := dico value.
 	gain := vals at: #gain.
@@ -58,6 +58,10 @@ JacocoStats class >> exportToCSV: aCollection [
 	(gain at: #gainWithZeros).
 	(gain at: #numberOfZeros).
 	(vals at: #precision).
+	(vals at: #precisionCommitMeaned).
+	(vals at: #precisionFineGrainedWeightedMean) first.
+	(vals at: #precisionFineGrainedWeightedMean) second first.
+	(vals at: #precisionFineGrainedWeightedMean) second second.
 	(vals at: #precisionWeighted) first.
 	(vals at: #precisionWeighted) second first.
 	(vals at: #precisionWeighted) second second.
@@ -65,6 +69,10 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #precisionWeightedCommitNotNull) second first.
 	(vals at: #precisionWeightedCommitNotNull) second second.
 	(vals at: #recall).
+	(vals at: #recallCommitMeaned).
+	(vals at: #recallFineGrainedWeightedMean) first.
+	(vals at: #recallFineGrainedWeightedMean) second first.
+	(vals at: #recallFineGrainedWeightedMean) second second.
 	(vals at: #recallWeighted) first.
 	(vals at: #recallWeighted) second first.
 	(vals at: #recallWeighted) second second.
