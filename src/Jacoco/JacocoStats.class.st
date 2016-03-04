@@ -318,8 +318,8 @@ JacocoStats >> makeStatsOnCommit: commit withSelector: aMethodSelector [
 		do:
 			[ :aMethod | 
 			(res at: #positives)
-				add: ((aMethod perform: mapping) reject: self toRemove).
-			(res at: #realData) add: (self selectMethodsCovering: aMethod) ].
+				addAll: ((aMethod perform: mapping) reject: self toRemove).
+			(res at: #realData) addAll: (self selectMethodsCovering: aMethod) ].
 	
 	^ self
 		createDictionaryForCommit: commit
