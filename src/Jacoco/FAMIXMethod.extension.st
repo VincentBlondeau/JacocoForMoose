@@ -64,7 +64,9 @@ FAMIXMethod >> isNotIgnoredTest [
 	<multivalued>
 	<derived>
 	<MSEComment: 'If the method is a not ignored test'>
-	^ self isTest and: [ self isIgnored not ]
+	^ self privateState
+		cacheAt: #isNotIgnoredTest
+		ifAbsentPut: [ self isTest and: [ self isIgnored not ] ]
 ]
 
 { #category : #'*Jacoco-Import tests' }
