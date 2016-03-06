@@ -64,6 +64,7 @@ JacocoStats class >> exportToCSV: aCollection [
 	(gainCommit at: #numberOfZeros).
 	(vals at: #precision).
 	(vals at: #precisionCommitMeaned).
+	(vals at: #precisionCommitRandomMeaned).
 	(vals at: #precisionFineGrainedWeightedMean) first.
 	(vals at: #precisionFineGrainedWeightedMean) second first.
 	(vals at: #precisionFineGrainedWeightedMean) second second.
@@ -75,6 +76,7 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #precisionWeightedCommitNotNull) second second.
 	(vals at: #recall).
 	(vals at: #recallCommitMeaned).
+	(vals at: #recallCommitRandomMeaned).
 	(vals at: #recallFineGrainedWeightedMean) first.
 	(vals at: #recallFineGrainedWeightedMean) second first.
 	(vals at: #recallFineGrainedWeightedMean) second second.
@@ -341,6 +343,28 @@ JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 		all: nil
 ]
 
+{ #category : #'metrics calculus' }
+JacocoStats >> makeStatsOnRandom: commit withSelector: aMethodSelector [
+	| mapping  res |
+	mapping := self mappingToMethodGetters at: aMethodSelector.
+	res := Dictionary new
+		at: #positives put: Set new;
+		at: #realData put: Set new;
+		yourself.
+	(self selectMethodsFromModel randomSelect: self meanNumberOfCommit rounded)
+		do:
+			[ :aMethod | 
+			(res at: #positives)
+				addAll: ((aMethod perform: mapping) reject: self toRemove).
+			(res at: #realData) addAll: (self selectMethodsCovering: aMethod) ].
+	
+	^ self
+		createDictionaryForCommit: commit
+		fromPostives: (res at: #positives)
+		realData: (res at: #realData)
+		all: nil
+]
+
 { #category : #'stats - generic' }
 JacocoStats >> mappingToMethodGetters [
 	^ {(#makeInfinitestStatsOn: -> #staticlyFoundInfinitestTestMethodsCallingMyself).
@@ -353,6 +377,16 @@ JacocoStats >> mappingToMethodGetters [
 	(#makeStaticInnerclassesStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses).
 	(#makeStaticStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyself).
 	(#makeStaticCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable)} asDictionary
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> meanNumberOfCommit [
+	^ cache
+		at: #meanNumberOfCommit
+		ifAbsentPut:
+			[ (self selectCommitsFromModel
+				average: [ :commit | (commit changes select: #isJavaFile) size ])
+				asFloat round: 2 ]
 ]
 
 { #category : #'metrics calculus' }
@@ -424,6 +458,8 @@ JacocoStats >> shouldRemoveSpecificly: element [
 JacocoStats >> statsOn: aMooseModel [
 	^ {(#numberOfCoreMethods -> self selectAllCoreMethods).
 	(#numberOfTestMethods -> self selectAllTestMethods).
+	(#numberOfCommits -> self selectCommitsFromModel size).
+	(#numberOfJavaFilesChangedByCommit -> self meanNumberOfCommit).
 	(#LOCCovered
 		->
 			((self selectAllCoreMethods select: [ :item | item isCoveredByJacocoTestMethods ])
@@ -475,7 +511,7 @@ JacocoStats >> statsOn: aMooseModel [
 
 { #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: dicoEntry [
-	| precisionMean recallMean resMethod resCommit methods gainData greenTests recallWeightedMean precisionWeightedMean gainCommit |
+	| precisionMean recallMean resMethod resCommit methods gainData greenTests recallWeightedMean precisionWeightedMean gainCommit resCommitRandom |
 	methods := self selectMethodsFromModel.
 	resMethod := methods
 		collect:
@@ -483,6 +519,9 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 	resCommit := self selectCommitsFromModel
 		collect:
 			[ :m | self makeStatsOnCommit: m withSelector: aMethodSelector ].
+	resCommitRandom := self selectCommitsFromModel
+		collect:
+			[ :m | self makeStatsOnRandom: m withSelector: aMethodSelector ].
 	precisionMean := self calculateMeanOfMetric: #Precision on: resMethod.
 	recallMean := self calculateMeanOfMetric: #Recall on: resMethod.
 	precisionWeightedMean := self
@@ -504,6 +543,10 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 				-> (self calculateMeanOfMetric: #Precision on: resCommit)).
 			(#recallCommitMeaned
 				-> (self calculateMeanOfMetric: #Recall on: resCommit)).
+			(#precisionCommitRandomMeaned
+				-> (self calculateMeanOfMetric: #Precision on: resCommitRandom )).
+			(#recallCommitRandomMeaned
+				-> (self calculateMeanOfMetric: #Recall on: resCommitRandom)).
 			(#precisionFineGrainedWeightedMean
 				->
 					(self calculateFineGrainedWeightedMeanOfMetric: #Precision on: resMethod)).
