@@ -216,41 +216,50 @@ FAMIXBehaviouralEntity >> numberOfArgsFromSignature [
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundAnyTestMethodsCallingMyself [
-	^ (self
-		deepCollect: [ :entity | 
-			entity incomingInvocations
-				collect: [ :inv | 
-					inv from	"isStub
+	^ self privateState
+		cacheAt: #staticlyFoundAnyTestMethodsCallingMyself
+		ifAbsentPut:
+			[ (self
+				deepCollect: [ :entity | 
+					entity incomingInvocations
+						collect: [ :inv | 
+							inv from	"isStub
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
-				thenSelect: #isNotNil ]) select: #isTest
+						thenSelect: #isNotNil ]) select: #isTest ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundByClassJacocoTestMethodsCallingMyself [
-	^ ((self
-		deepCollect:
-			[ :entity | (entity queryAllIncomingInvocations " MooseChef FAMIXInvocation") atTypeScope "FAMIXClass" ])
-		flatCollect: [ :e | e methods ])
-		select: #isCoveringJacocoMethods
-	", {self}: not added because only the core is managed"
+	^ self privateState
+		cacheAt: #staticlyFoundByClassJacocoTestMethodsCallingMyself
+		ifAbsentPut:
+			[ ((self deepCollect: [ :entity | entity queryAllIncomingInvocations atTypeScope	" MooseChef FAMIXInvocation"	"FAMIXClass" ]) flatCollect: [ :e | e methods ]) select: #isCoveringJacocoMethods
+			", {self}: not added because only the core is managed" ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyself [
-	^ ((self
-		deepCollect: [ :entity | 
-			entity incomingInvocations
-				collect: [ :inv | 
-					inv from	"isStub
+	^ self privateState
+		cacheAt: #staticlyFoundJacocoTestMethodsCallingMyself
+		ifAbsentPut:
+			[ (self
+				deepCollect: [ :entity | 
+					entity incomingInvocations
+						collect: [ :inv | 
+							inv from	"isStub
 				ifFalse: [ inv from ]
 				ifTrue: [ nil ] " ]
-				thenSelect: #isNotNil ]), { self } ) select: #isCoveringJacocoMethods
+						thenSelect: #isNotNil ]) , {self} select: #isCoveringJacocoMethods ]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess [
-	^ self allIncomingInvocationsWithAccessCalls , {self} select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess
+		ifAbsentPut:
+			[ self allIncomingInvocationsWithAccessCalls , {self} select: #isCoveringJacocoMethods]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
@@ -286,15 +295,25 @@ FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingAccess
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable [
-	^ self allIncomingInvocationsWithCallable , {self} select: #isCoveringJacocoMethods
+^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingCallable
+		ifAbsentPut:
+			[ self allIncomingInvocationsWithCallable , {self} select: #isCoveringJacocoMethods]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance [
-	^ self allIncomingInvocationsWithInterfacesCalls , {self} select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt:
+			#staticlyFoundJacocoTestMethodsCallingMyselfUsingInheritance
+		ifAbsentPut:
+			[  self allIncomingInvocationsWithInterfacesCalls , {self} select: #isCoveringJacocoMethods]
 ]
 
 { #category : #'*Jacoco-TestSelection' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses [
-	^ (self allIncomingInvocationsWithInnerclassDefiningMethods, {self}) select: #isCoveringJacocoMethods
+	^ self privateState
+		cacheAt: #staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses
+		ifAbsentPut: [ self allIncomingInvocationsWithInnerclassDefiningMethods , {self} select: #isCoveringJacocoMethods ]
 ]

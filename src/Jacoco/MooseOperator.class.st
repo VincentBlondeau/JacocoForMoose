@@ -28,29 +28,8 @@ MooseOperator class >> runOn: aMooseModel [
 ]
 
 { #category : #running }
-MooseOperator class >> runOn: aMooseModel withArgs: args [
-	 
-	^(self on: aMooseModel) args: args; run
-]
-
-{ #category : #running }
 MooseOperator class >> runWithProgressOn: aMooseModel [
 	^ (self on: aMooseModel) runWithProgress
-]
-
-{ #category : #'as yet unclassified' }
-MooseOperator >> argAt: aString [
-	^ self args at: aString
-]
-
-{ #category : #accessing }
-MooseOperator >> args [
-	^ args
-]
-
-{ #category : #accessing }
-MooseOperator >> args: anObject [
-	args := anObject
 ]
 
 { #category : #accessing }

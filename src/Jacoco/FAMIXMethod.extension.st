@@ -36,9 +36,7 @@ FAMIXMethod >> isInStaticPartOfTheInitializerCommingFrom: aMethod [
 		ifEmpty:
 			[ self sourceAnchor
 				ifNotNil:
-					[ ^ self hasClassScope
-						ifFalse: [ self notYetImplemented ]
-						ifTrue: [ self hasClassScope ] ]
+					[ ^ true "Very likely" ]
 				ifNil: [ ^ class attributes anySatisfy: [ :attr | attr hasClassScope ] ]	"cas où l'appel n'est pas directement affecté à l'attribut" ].
 	attributes size = 1
 		ifFalse:
@@ -64,7 +62,9 @@ FAMIXMethod >> isNotIgnoredTest [
 	<multivalued>
 	<derived>
 	<MSEComment: 'If the method is a not ignored test'>
-	^ self isTest and: [ self isIgnored not ]
+	^ self privateState
+		cacheAt: #isNotIgnoredTest
+		ifAbsentPut: [ self isTest and: [ self isIgnored not ] ]
 ]
 
 { #category : #'*Jacoco-Import tests' }
