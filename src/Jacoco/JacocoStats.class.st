@@ -50,7 +50,7 @@ Class {
 JacocoStats class >> exportToCSV: aCollection [
 	| data variables vals gain values stream writter gainCommit |
 	data := aCollection select: #isDictionary.
-	variables := #(#Exp #Gain #Gainavg #NumOfZeros #GainCommit #GainCommitavg #CommitNumOfZeros #Precision #PrecisionCommitMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #PrecisionWeightedNotNull #cor #pvalue #Recall #RecallCommitMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #RecallWeightedNotNull #cor #pvalue).
+	variables := #(#Exp #Gain #Gainavg #NumOfZeros #GainCommit #GainCommitavg #CommitNumOfZeros #Precision #PrecisionCommitMeaned #precisionCommitRandomMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #Recall #RecallCommitMeaned #recallCommitRandomMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #fMeasure #fMeasureCommitMeaned #fMeasureFineGrainedWeightedMean).	"#PrecisionWeightedNotNull #cor #pvalue"	"#RecallWeightedNotNull #cor #pvalue"
 	values := [ :dico | 
 	vals := dico value.
 	gain := vals at: #gain.
@@ -71,9 +71,9 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #precisionWeighted) first.
 	(vals at: #precisionWeighted) second first.
 	(vals at: #precisionWeighted) second second.
-	(vals at: #precisionWeightedCommitNotNull) first.
+	"	(vals at: #precisionWeightedCommitNotNull) first.
 	(vals at: #precisionWeightedCommitNotNull) second first.
-	(vals at: #precisionWeightedCommitNotNull) second second.
+	(vals at: #precisionWeightedCommitNotNull) second second."
 	(vals at: #recall).
 	(vals at: #recallCommitMeaned).
 	(vals at: #recallCommitRandomMeaned).
@@ -83,9 +83,12 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #recallWeighted) first.
 	(vals at: #recallWeighted) second first.
 	(vals at: #recallWeighted) second second.
-	(vals at: #recallWeightedCommitNotNull) first.
+	"(vals at: #recallWeightedCommitNotNull) first.
 	(vals at: #recallWeightedCommitNotNull) second first.
-	(vals at: #recallWeightedCommitNotNull) second second} ].
+	(vals at: #recallWeightedCommitNotNull) second second."
+	(vals at: #fMeasure).
+	(vals at: #fmeasureCommitMeaned).
+	(vals at: #fmeasureFineGrainedWeightedMean) first} ].
 	[ stream := StandardFileStream forceNewFileNamed: 'C:\tmp\export-dico.csv'.
 	writter := (NeoCSVWriter on: stream)
 		separator: $;;
@@ -168,7 +171,10 @@ JacocoStats >> calculateFMeasureOn: aDictionary [
 		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
 	(recall isNil or: [ prec isNil ])
 		ifTrue: [ fmeasure := nil ]
-		ifFalse: [ fmeasure := 2 * prec * recall / (prec + recall) asFloat ].
+		ifFalse:
+			[ prec + recall = 0
+				ifTrue: [ fmeasure := 0 ]
+				ifFalse: [ fmeasure := 2 * prec * recall / (prec + recall) asFloat ] ].
 	aDictionary at: #FMeasure put: fmeasure.
 	^ fmeasure
 ]
@@ -563,7 +569,7 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 			(#fmeasureCommitRandomMeaned -> (self calculateMeanOfMetric: #FMeasure on: resCommitRandom)).
 			(#precisionFineGrainedWeightedMean -> (self calculateFineGrainedWeightedMeanOfMetric: #Precision on: resMethod)).
 			(#recallFineGrainedWeightedMean -> (self calculateFineGrainedWeightedMeanOfMetric: #Recall on: resMethod)).
-			(#fmeasureFineGrainedWeightedMean -> (self calculateMeanOfMetric: #FMeasure on: resMethod)).
+			(#fmeasureFineGrainedWeightedMean -> (self calculateFineGrainedWeightedMeanOfMetric: #FMeasure on: resMethod)).
 			"(#recallWeightedCommitNotNull -> (self calculateCommitNotNullWeightedMeanOfMetric: #Recall on: resMethod)).
 			(#precisionWeightedCommitNotNull -> (self calculateCommitNotNullWeightedMeanOfMetric: #Precision on: resMethod))."
 			(#data -> resMethod).
