@@ -491,12 +491,14 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfTestMethods -> self selectAllTestMethods).
 	(#numberOfCommits -> self selectCommitsFromModel size).
 	(#numberOfJavaFilesChangedByCommit -> self meanNumberOfCommit).
+	(#numberOfJavaMethodsChangedByCommit -> self meanNumberOfCommitByMethod).
 	(#LOCCovered
 		->
 			((self selectAllCoreMethods select: [ :item | item isCoveredByJacocoTestMethods ])
 				sum: #numberOfLinesOfCode)).
 	(#numberOfJacocoTests
-		-> (self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
+		->
+			(self selectAllTestMethods select: [ :item | item isCoveringJacocoMethods ]) size).
 	(#NLOCCore -> (self selectAllCoreMethods sum: #numberOfLinesOfCode)).
 	(#NLOCTest
 		->
@@ -505,19 +507,30 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfMethodsCovered -> self selectMethodsFromModel size).
 	(#avgNumberOfMethodsCoveredByATest -> self avgNumberOfMethodsCoveredByATest).
 	(#avgNumberOfTestsThatCoversAMethod -> self avgNumberOfTestsThatCoversAMethod).
-	(#numberOfClassCommits -> (self allNotStubMethods sum: [ :e | e belongsTo numberOfCommits ])).
-	(#numberOfMethodCommits -> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ])).
+	(#numberOfClassCommits
+		-> (self allNotStubMethods sum: [ :e | e belongsTo numberOfCommits ])).
+	(#numberOfMethodCommits
+		-> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ])).
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallableStatsOn:
 		dicoEntry: #'4-jacocoVSStaticWithCallables').
-	(self statsOn: aMooseModel methodSelector: #makeInfinitestStatsOn: dicoEntry: #'1-jacocoVSInfinitest').
-	(self statsOn: aMooseModel methodSelector: #makeStaticStatsOn: dicoEntry: #'3-jacocoVSStatic').
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeInfinitestStatsOn:
+		dicoEntry: #'1-jacocoVSInfinitest').
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticStatsOn:
+		dicoEntry: #'3-jacocoVSStatic').
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallAndInheritanceStatsOn:
 		dicoEntry: #'7-jacocoVSStaticWithInheritance').
-	(self statsOn: aMooseModel methodSelector: #makeStaticClassStatsOn: dicoEntry: #'2-jacocoVSStaticClass').
+	(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticClassStatsOn:
+		dicoEntry: #'2-jacocoVSStaticClass').
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticInnerclassesStatsOn:
@@ -537,7 +550,8 @@ JacocoStats >> statsOn: aMooseModel [
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn:
-		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')} asDictionary
+		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')}
+		asDictionary
 ]
 
 { #category : #'stats - generic' }
