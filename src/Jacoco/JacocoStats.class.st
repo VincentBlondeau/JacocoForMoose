@@ -159,22 +159,13 @@ JacocoStats >> calculateCor: collOfWeightedElements [
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculateFMeasureOn: aDictionary [
-	| tp fp prec fn recall fmeasure |
+	| tp fp fn fmeasure |
 	tp := aDictionary at: #tp.
 	fp := aDictionary at: #fp.
 	fn := aDictionary at: #fn.
-	prec := tp size + fp size = 0
-		ifTrue: [ nil ]
-		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ].
-	recall := tp size + fn size = 0
-		ifTrue: [ nil ]
-		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
-	(recall isNil or: [ prec isNil ])
+	2 * tp size asFloat + fn size asFloat + fp size asFloat = 0
 		ifTrue: [ fmeasure := nil ]
-		ifFalse:
-			[ prec + recall = 0
-				ifTrue: [ fmeasure := 0 ]
-				ifFalse: [ fmeasure := 2 * prec * recall / (prec + recall) asFloat ] ].
+		ifFalse: [ fmeasure := 2 * tp size asFloat / (2 * tp size asFloat + fn size asFloat + fp size asFloat) ].
 	aDictionary at: #FMeasure put: fmeasure.
 	^ fmeasure
 ]
@@ -335,7 +326,7 @@ JacocoStats >> isMethodAnchorInTheTestDir: method [
 
 { #category : #'metrics calculus' }
 JacocoStats >> makeStatsOnCommit: commit withSelector: aMethodSelector [
-	| mapping  res |
+	| mapping res |
 	mapping := self mappingToMethodGetters at: aMethodSelector.
 	res := Dictionary new
 		at: #positives put: Set new;
@@ -344,10 +335,8 @@ JacocoStats >> makeStatsOnCommit: commit withSelector: aMethodSelector [
 	commit allChangedMethods
 		do:
 			[ :aMethod | 
-			(res at: #positives)
-				addAll: ((aMethod perform: mapping) reject: self toRemove).
+			(res at: #positives) addAll: ((aMethod perform: mapping) reject: self toRemove).
 			(res at: #realData) addAll: (self selectMethodsCovering: aMethod) ].
-	
 	^ self
 		createDictionaryForCommit: commit
 		fromPostives: (res at: #positives)
@@ -370,16 +359,18 @@ JacocoStats >> makeStatsOnMethod: method withSelector: aMethodSelector [
 
 { #category : #'metrics calculus' }
 JacocoStats >> makeStatsOnRandom: commit withSelector: aMethodSelector [
-	| mapping res  |
+	| mapping res |
 	mapping := self mappingToMethodGetters at: aMethodSelector.
 	res := Dictionary new
 		at: #positives put: Set new;
 		at: #realData put: Set new;
 		yourself.
-(	self selectMethodsFromModel randomSelect: self meanNumberOfCommit rounded)
+	(self selectMethodsFromModel
+		randomSelect: self meanNumberOfCommitByMethod rounded)
 		do:
 			[ :aMethod | 
-			(res at: #positives) addAll: ((aMethod perform: mapping) reject: self toRemove).
+			(res at: #positives)
+				addAll: ((aMethod perform: mapping) reject: self toRemove).
 			(res at: #realData) addAll: (self selectMethodsCovering: aMethod) ].
 	^ self
 		createDictionaryForCommit: commit
@@ -410,6 +401,18 @@ JacocoStats >> meanNumberOfCommit [
 			[ (self selectCommitsFromModel
 				average: [ :commit | (commit changes select: #isJavaFile) size ])
 				asFloat round: 2 ]
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats >> meanNumberOfCommitByMethod [
+	^ cache
+		at: #meanNumberOfCommitByMethod
+		ifAbsentPut:
+			[ (self selectCommitsFromModel
+				average:
+					[ :commit | 
+					(((commit changes flatCollect: #modifiedEntities) select: #isMethod)
+						as: Set) size ]) asFloat round: 2 ]
 ]
 
 { #category : #'metrics calculus' }
@@ -488,6 +491,7 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfTestMethods -> self selectAllTestMethods).
 	(#numberOfCommits -> self selectCommitsFromModel size).
 	(#numberOfJavaFilesChangedByCommit -> self meanNumberOfCommit).
+	(#numberOfJavaMethodsChangedByCommit -> self meanNumberOfCommitByMethod ).
 	(#LOCCovered
 		->
 			((self selectAllCoreMethods select: [ :item | item isCoveredByJacocoTestMethods ])
