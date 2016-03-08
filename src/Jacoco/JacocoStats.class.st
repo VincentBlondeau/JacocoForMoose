@@ -165,13 +165,13 @@ JacocoStats >> calculateFMeasureOn: aDictionary [
 	fp := aDictionary at: #fp.
 	fn := aDictionary at: #fn.
 	prec := tp size + fp size = 0
-		ifTrue: [ nil ]
+		ifTrue: [ 0 ]
 		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ].
 	recall := tp size + fn size = 0
-		ifTrue: [ nil ]
+		ifTrue: [ 0 ]
 		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
 	(recall isNil or: [ prec isNil ])
-		ifTrue: [ fmeasure := nil ]
+		ifTrue: [ fmeasure := 0 ]
 		ifFalse:
 			[ prec + recall = 0
 				ifTrue: [ fmeasure := 0 ]
@@ -245,7 +245,7 @@ JacocoStats >> calculatePrecisionOn: aDictionary [
 	tp := aDictionary at: #tp.
 	fp := aDictionary at: #fp.
 	prec := tp size + fp size = 0
-		ifTrue: [ nil ]
+		ifTrue: [ 0 ]
 		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ].
 	aDictionary at: #Prec put: prec.
 	^ prec
@@ -257,7 +257,7 @@ JacocoStats >> calculateRecallOn: aDictionary [
 	tp := aDictionary at: #tp.
 	fn := aDictionary at: #fn.
 	recall := tp size + fn size = 0
-		ifTrue: [ nil ]
+		ifTrue: [ 0 ]
 		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
 	aDictionary at: #Recall put: recall.
 	^ recall
