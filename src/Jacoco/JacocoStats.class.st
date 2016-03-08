@@ -50,7 +50,7 @@ Class {
 JacocoStats class >> exportToCSV: aCollection [
 	| data variables vals gain values stream writter gainCommit |
 	data := aCollection select: #isDictionary.
-	variables := #(#Exp #Gain #Gainavg #NumOfZeros #GainCommit #GainCommitavg #CommitNumOfZeros #Precision #PrecisionCommitMeaned #precisionCommitRandomMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #Recall #RecallCommitMeaned #recallCommitRandomMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #fMeasure #fMeasureCommitMeaned #fMeasureFineGrainedWeightedMean).	"#PrecisionWeightedNotNull #cor #pvalue"	"#RecallWeightedNotNull #cor #pvalue"
+	variables := #(#Exp #Gain #Gainavg #NumOfZeros #GainCommit #GainCommitavg #CommitNumOfZeros #GainFineGrainedWeightedMean #Precision #PrecisionCommitMeaned #precisionCommitRandomMeaned #PrecisionFineGrainedWeightedMean #cor #pvalue #PrecisionWeighted #cor #pvalue #Recall #RecallCommitMeaned #recallCommitRandomMeaned #RecallFineGrainedWeightedMean #cor #pvalue #RecallWeighted #cor #pvalue #fMeasure #fMeasureCommitMeaned #fMeasureFineGrainedWeightedMean).	"#PrecisionWeightedNotNull #cor #pvalue"	"#RecallWeightedNotNull #cor #pvalue"
 	values := [ :dico | 
 	vals := dico value.
 	gain := vals at: #gain.
@@ -62,6 +62,7 @@ JacocoStats class >> exportToCSV: aCollection [
 	(gainCommit at: #avgWithZeros).
 	(gainCommit at: #gainWithZeros).
 	(gainCommit at: #numberOfZeros).
+	(vals at: #gainFineGrainedWeightedMean).
 	(vals at: #precision).
 	(vals at: #precisionCommitMeaned).
 	(vals at: #precisionCommitRandomMeaned).
@@ -159,15 +160,39 @@ JacocoStats >> calculateCor: collOfWeightedElements [
 
 { #category : #'metrics calculus' }
 JacocoStats >> calculateFMeasureOn: aDictionary [
-	| tp fp fn fmeasure |
+	| tp fp prec fn recall fmeasure |
 	tp := aDictionary at: #tp.
 	fp := aDictionary at: #fp.
 	fn := aDictionary at: #fn.
-	2 * tp size asFloat + fn size asFloat + fp size asFloat = 0
+	prec := tp size + fp size = 0
+		ifTrue: [ nil ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fp size asFloat) ].
+	recall := tp size + fn size = 0
+		ifTrue: [ nil ]
+		ifFalse: [ tp size asFloat / (tp size asFloat + fn size asFloat) ].
+	(recall isNil or: [ prec isNil ])
 		ifTrue: [ fmeasure := nil ]
-		ifFalse: [ fmeasure := 2 * tp size asFloat / (2 * tp size asFloat + fn size asFloat + fp size asFloat) ].
+		ifFalse:
+			[ prec + recall = 0
+				ifTrue: [ fmeasure := 0 ]
+				ifFalse: [ fmeasure := 2 * prec * recall / (prec + recall) asFloat ] ].
 	aDictionary at: #FMeasure put: fmeasure.
 	^ fmeasure
+]
+
+{ #category : #'metrics calculus' }
+JacocoStats >> calculateFineGrainedWeightedGainDataOn: res [
+	| elements numberOfTests size sum |
+	numberOfTests := self numberOfTestsMethodsFromModel: model.
+	elements := res
+		collect:
+			[ :e | 
+			{(self calculateGainOn: e).
+			(e at: #numberOfFineGrainedCommits)} ]
+		thenReject: #isNil.
+	size := elements sum: #second.
+	sum := elements sum: [ :item | item first * item second ].
+	^ sum / size round: 4
 ]
 
 { #category : #'metrics calculus' }
@@ -595,6 +620,7 @@ JacocoStats >> statsOn: aMooseModel methodSelector: aMethodSelector dicoEntry: d
 			(#gainCommitData -> gainCommit first).
 			(#gainCommit -> gainCommit second).
 			(#gain -> gainData second).
+			(#gainFineGrainedWeightedMean -> (self calculateFineGrainedWeightedGainDataOn: resMethod)).
 			(#percentageOfGreenTests -> ((greenTests occurrencesOf: 'pass') / greenTests size) asFloat)} asDictionary
 ]
 
