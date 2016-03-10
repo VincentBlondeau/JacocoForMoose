@@ -26,7 +26,9 @@ JacocoStatsCMS >> isMethodAnchorInTheTestDir: method [
 
 { #category : #accessing }
 JacocoStatsCMS >> shouldRemoveSpecificly: element [
-	^ element = self model testGetterSetter
+	^ element
+		=
+			self testGetterSetter
 ]
 
 { #category : #accessing }

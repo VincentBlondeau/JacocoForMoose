@@ -47,6 +47,36 @@ Class {
 }
 
 { #category : #'as yet unclassified' }
+JacocoStats class >> experimentNameMapping [
+	^ {('0-jacocoVSStaticWithAccessAndInnerAndInheritances' -> '00').
+	('1-jacocoVSInfinitest' -> '1-Infinitest').
+	('2-jacocoVSStaticClass' -> '2-Moose (classes)').
+	('3-jacocoVSStatic' -> '3-Moose (methods)').
+	('4-jacocoVSStaticWithCallables' -> '4-Moose w/ delayed execution').
+	('5-jacocoVSStaticWithInner' -> '5-Moose w/ anonymous classes').
+	('6-jacocoVSStaticWithAccess' -> '6-Moose w/ attributes').
+	('7-jacocoVSStaticWithInheritance' -> '7-Moose w/ polymorphism').
+	('8-jacocoVSStaticWithAccessAndInner' -> '01').
+	('9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables'
+		-> '8-Moose w/ att. \& anon. \& pol. \& delayed execution')} asDictionary
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats class >> exportStatData: aCollection withProjectName: projectName [
+	| data stream writter |
+	data := aCollection select: #isDictionary.
+	[ stream := StandardFileStream forceNewFileNamed: 'c:\tmp\export-stats.csv'.
+	writter := (NeoCSVWriter on: stream)
+		separator: $;;
+		yourself.
+	"nextPut: variables;"
+	data
+		associationsDo:
+			[ :aDico | self obtainStatsFrom: aDico projectName: projectName writter: writter ] ]
+		ensure: [ stream close ]
+]
+
+{ #category : #'as yet unclassified' }
 JacocoStats class >> exportToCSV: aCollection [
 	| data variables vals gain values stream writter gainCommit |
 	data := aCollection select: #isDictionary.
@@ -65,32 +95,32 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #gainFineGrainedWeightedMean).
 	(vals at: #precision).
 	(vals at: #precisionCommitMeaned).
-	(vals at: #precisionCommitRandomMeaned).
+	"(vals at: #precisionCommitRandomMeaned)."
 	(vals at: #precisionFineGrainedWeightedMean) first.
-	(vals at: #precisionFineGrainedWeightedMean) second first.
-	(vals at: #precisionFineGrainedWeightedMean) second second.
+	(vals at: #precisionFineGrainedWeightedMean) second .
+	(vals at: #precisionFineGrainedWeightedMean) second .
 	(vals at: #precisionWeighted) first.
-	(vals at: #precisionWeighted) second first.
-	(vals at: #precisionWeighted) second second.
+	(vals at: #precisionWeighted) second .
+	(vals at: #precisionWeighted) second .
 	"	(vals at: #precisionWeightedCommitNotNull) first.
 	(vals at: #precisionWeightedCommitNotNull) second first.
 	(vals at: #precisionWeightedCommitNotNull) second second."
 	(vals at: #recall).
 	(vals at: #recallCommitMeaned).
-	(vals at: #recallCommitRandomMeaned).
+	"(vals at: #recallCommitRandomMeaned)."
 	(vals at: #recallFineGrainedWeightedMean) first.
-	(vals at: #recallFineGrainedWeightedMean) second first.
-	(vals at: #recallFineGrainedWeightedMean) second second.
+	(vals at: #recallFineGrainedWeightedMean) second .
+	(vals at: #recallFineGrainedWeightedMean) second .
 	(vals at: #recallWeighted) first.
-	(vals at: #recallWeighted) second first.
-	(vals at: #recallWeighted) second second.
+	(vals at: #recallWeighted) second .
+	(vals at: #recallWeighted) second .
 	"(vals at: #recallWeightedCommitNotNull) first.
 	(vals at: #recallWeightedCommitNotNull) second first.
 	(vals at: #recallWeightedCommitNotNull) second second."
 	(vals at: #fMeasure).
 	(vals at: #fmeasureCommitMeaned).
 	(vals at: #fmeasureFineGrainedWeightedMean) first} ].
-	[ stream := StandardFileStream forceNewFileNamed: 'C:\tmp\export-dico.csv'.
+	[ stream := StandardFileStream forceNewFileNamed: '/tmp/export-dico.csv'.
 	writter := (NeoCSVWriter on: stream)
 		separator: $;;
 		nextPut: variables;
@@ -101,12 +131,39 @@ JacocoStats class >> exportToCSV: aCollection [
 
 { #category : #'as yet unclassified' }
 JacocoStats class >> isRConnectorAvailable [
-	^ Smalltalk globals
-		at: #RObject
-		ifPresent: [ 'library' asREval: {'car'. }.
-			'library' asREval: {'ggplot2'. }.
-			true ]
-		ifAbsent: [ false ]
+	^ false 
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats class >> numberOfTestOf: aString [
+	^ {('P1' -> 5323).
+	('P2' -> 168).
+	('P3' -> 3035)} asDictionary at: aString
+]
+
+{ #category : #'as yet unclassified' }
+JacocoStats class >> obtainStatsFrom: anAssociation projectName: projectName writter: writter [
+	| expName stats res |
+	expName := self experimentNameMapping at: anAssociation key.
+	{('gain-unif' -> [ :coll | (coll at: #data) collect: [ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
+	('recall-unif' -> [ :coll | (coll at: #data) collect: [ :e | e at: #Recall ] ]).
+	('precision-unif' -> [ :coll | (coll at: #data) collect: [ :e | e at: #Prec ] ]).
+	('gain-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
+	('recall-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Recall ] ]).
+	('precision-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Prec ] ])}
+		do:
+			[ :assoc | 
+			| data sd |
+			assoc key.
+			data := assoc value value: anAssociation value.
+			stats := 'summary' asREval: {data}.
+			sd := #sd asREval: {data}.
+			res := OrderedCollection new
+				add: projectName , '-' , expName , '-' , assoc key;
+				addAll: stats asObject;
+				add: sd first;
+				yourself.
+			writter nextPut: res ]
 ]
 
 { #category : #accessing }
