@@ -23,29 +23,27 @@ FAMIXMethod >> isIgnored [
 ]
 
 { #category : #'*Jacoco-Import - static' }
-FAMIXMethod >> isInStaticPartOfTheInitializerCommingFrom: aMethod [
-	| class attributes declaredTypeOfTheMethodReturn |
-	class := self belongsTo.
-	declaredTypeOfTheMethodReturn := aMethod isConstructor
-		ifTrue: [ aMethod belongsTo ]
-		ifFalse: [ aMethod declaredType ].
-	attributes := class attributes
+FAMIXMethod >> isInStaticPartOfTheInitializerCommingFrom: arg1 [
+	| tmp1 tmp2 tmp3 |
+	tmp1 := self belongsTo.
+	tmp3 := arg1 isConstructor
+		ifTrue: [ arg1 belongsTo ]
+		ifFalse: [ arg1 declaredType ].
+	tmp2 := tmp1 attributes
 		select:
-			[ :attribute | declaredTypeOfTheMethodReturn withSuperclassHierarchy includes: attribute declaredType ].
-	attributes
+			[ :arg2 | tmp3 withSuperclassHierarchy includes: arg2 declaredType ].
+	tmp2
 		ifEmpty:
-			[ self sourceAnchor
-				ifNotNil:
-					[ ^ true "Very likely" ]
-				ifNil: [ ^ class attributes anySatisfy: [ :attr | attr hasClassScope ] ]	"cas où l'appel n'est pas directement affecté à l'attribut" ].
-	attributes size = 1
+			[ self sourceAnchor ifNotNil: [ ^ true ].
+			^ tmp1 attributes anySatisfy: [ :arg3 | arg3 hasClassScope ] ].
+	tmp2 size = 1
 		ifFalse:
 			[ Log
 				warn:
 					{'[JacocoStats] More than one attribute found'.
 					self.
-					aMethod} ].
-	^ attributes anySatisfy: [ :attr | attr hasClassScope ]
+					arg1} ].
+	^ tmp2 anySatisfy: [ :arg4 | arg4 hasClassScope ]
 ]
 
 { #category : #'*Jacoco-Import tests' }

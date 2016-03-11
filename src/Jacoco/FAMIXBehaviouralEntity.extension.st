@@ -317,3 +317,34 @@ FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerc
 		cacheAt: #staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerclasses
 		ifAbsentPut: [ self allIncomingInvocationsWithInnerclassDefiningMethods , {self} select: #isCoveringJacocoMethods ]
 ]
+
+{ #category : #'*Jacoco-Import - static' }
+FAMIXBehaviouralEntity >> staticlyFoundJacocoTestsAllClasses [
+	^ self privateState
+		cacheAt: #staticlyFoundJacocoTestsAllClasses
+		ifAbsentPut:
+			[ ((self belongsTo
+				deepCollect:
+					[ :entity | 
+					| res query plop |
+					query := Set new
+						addAll: entity queryAllIncomingInvocations atTypeScope;
+						addAll: entity queryIncomingAccesses atTypeScope;
+						addAll: entity queryIncomingReferences atTypeScope;
+						addAll: entity queryOutgoingInheritances atTypeScope;
+						yourself.
+					res := query asSet.
+					plop := entity isMethod
+						ifTrue: [ entity belongsTo ]
+						ifFalse: [ entity ].
+					plop isInnerClass
+						ifTrue:
+							[ entity belongsTo isMethod
+								ifTrue: [ res add: entity belongsTo ] ].
+					res ])
+				flatCollect:
+					[ :e | 
+					e isMethod
+						ifTrue: [ {e} ]
+						ifFalse: [ e methods ] ]) select: #isCoveringJacocoMethods ]
+]

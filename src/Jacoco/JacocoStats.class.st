@@ -95,32 +95,32 @@ JacocoStats class >> exportToCSV: aCollection [
 	(vals at: #gainFineGrainedWeightedMean).
 	(vals at: #precision).
 	(vals at: #precisionCommitMeaned).
-	"(vals at: #precisionCommitRandomMeaned)."
+	(vals at: #precisionCommitRandomMeaned).
 	(vals at: #precisionFineGrainedWeightedMean) first.
-	(vals at: #precisionFineGrainedWeightedMean) second .
-	(vals at: #precisionFineGrainedWeightedMean) second .
+	(vals at: #precisionFineGrainedWeightedMean) second first.
+	(vals at: #precisionFineGrainedWeightedMean) second second.
 	(vals at: #precisionWeighted) first.
-	(vals at: #precisionWeighted) second .
-	(vals at: #precisionWeighted) second .
+	(vals at: #precisionWeighted) second first.
+	(vals at: #precisionWeighted) second second.
 	"	(vals at: #precisionWeightedCommitNotNull) first.
 	(vals at: #precisionWeightedCommitNotNull) second first.
 	(vals at: #precisionWeightedCommitNotNull) second second."
 	(vals at: #recall).
 	(vals at: #recallCommitMeaned).
-	"(vals at: #recallCommitRandomMeaned)."
+	(vals at: #recallCommitRandomMeaned).
 	(vals at: #recallFineGrainedWeightedMean) first.
-	(vals at: #recallFineGrainedWeightedMean) second .
-	(vals at: #recallFineGrainedWeightedMean) second .
+	(vals at: #recallFineGrainedWeightedMean) second first.
+	(vals at: #recallFineGrainedWeightedMean) second second.
 	(vals at: #recallWeighted) first.
-	(vals at: #recallWeighted) second .
-	(vals at: #recallWeighted) second .
+	(vals at: #recallWeighted) second first.
+	(vals at: #recallWeighted) second second.
 	"(vals at: #recallWeightedCommitNotNull) first.
 	(vals at: #recallWeightedCommitNotNull) second first.
 	(vals at: #recallWeightedCommitNotNull) second second."
 	(vals at: #fMeasure).
 	(vals at: #fmeasureCommitMeaned).
 	(vals at: #fmeasureFineGrainedWeightedMean) first} ].
-	[ stream := StandardFileStream forceNewFileNamed: '/tmp/export-dico.csv'.
+	[ stream := StandardFileStream forceNewFileNamed: 'C:\tmp\export-dico.csv'.
 	writter := (NeoCSVWriter on: stream)
 		separator: $;;
 		nextPut: variables;
@@ -131,7 +131,12 @@ JacocoStats class >> exportToCSV: aCollection [
 
 { #category : #'as yet unclassified' }
 JacocoStats class >> isRConnectorAvailable [
-	^ false 
+	^ Smalltalk globals
+		at: #RObject
+		ifPresent: [ 'library' asREval: {'car'. }.
+			'library' asREval: {'ggplot2'. }.
+			true ]
+		ifAbsent: [ false ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -484,6 +489,7 @@ JacocoStats >> makeStatsOnRandom: commit withSelector: aMethodSelector [
 { #category : #'stats - generic' }
 JacocoStats >> mappingToMethodGetters [
 	^ {(#makeInfinitestStatsOn: -> #staticlyFoundInfinitestTestMethodsCallingMyself).
+	#makeStaticAllClassStatsOn: -> #staticlyFoundJacocoTestsAllClasses.
 	(#makeStaticAccessAndInnerAndInheritanceStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritance).
 	(#makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInnerAndInheritanceAndCallable).
 	(#makeStaticAccessAndInnerStatsOn: -> #staticlyFoundJacocoTestMethodsCallingMyselfUsingAccessAndInner).
@@ -589,7 +595,7 @@ JacocoStats >> shouldRemoveSpecificly: element [
 
 { #category : #'stats - generic' }
 JacocoStats >> statsOn: aMooseModel [
-	^ {(#numberOfCoreMethods -> self selectAllCoreMethods).
+	^ {"(#numberOfCoreMethods -> self selectAllCoreMethods).
 	(#numberOfTestMethods -> self selectAllTestMethods).
 	(#numberOfCommits -> self selectCommitsFromModel size).
 	(#numberOfJavaFilesChangedByCommit -> self meanNumberOfCommit).
@@ -615,8 +621,12 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfClassCommits
 		-> (self allNotStubMethods sum: [ :e | e belongsTo numberOfCommits ])).
 	(#numberOfMethodCommits
-		-> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ])).
-	(self
+		-> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ]))."
+		(self
+		statsOn: aMooseModel
+		methodSelector: #makeStaticAllClassStatsOn:
+		dicoEntry: #'10-jacocoVSStaticAllClass').
+"	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallableStatsOn:
 		dicoEntry: #'4-jacocoVSStaticWithCallables').
@@ -655,7 +665,7 @@ JacocoStats >> statsOn: aMooseModel [
 	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn:
-		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')}
+		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')"}
 		asDictionary
 ]
 
