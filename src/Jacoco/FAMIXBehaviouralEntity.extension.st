@@ -320,36 +320,31 @@ FAMIXBehaviouralEntity >> staticlyFoundJacocoTestMethodsCallingMyselfUsingInnerc
 
 { #category : #'*Jacoco-Import - static' }
 FAMIXBehaviouralEntity >> staticlyFoundJacocoTestsAllClasses [
-	^ ((self belongsTo
-		deepCollect:
-			[ :firstEntity | 
-			| res query plop entity |
-			entity := firstEntity isMethod
-				ifTrue: [ firstEntity belongsTo ]
-				ifFalse: [ firstEntity ].
-			query := Set new
-				addAll:
-					((entity methods flatCollect: [ :e | e incomingInvocations collect: [ :f | f from ] ])
-						collect: [ :e | e belongsTo ]);
-				addAll:
-					((entity attributes flatCollect: [ :e | e incomingAccesses collect: [ :f | f from ] ])
-						collect: [ :e | e belongsTo ]);
-				addAll: ((entity incomingReferences collect: [ :e | e from ]) collect: [ :e | e belongsTo ]);
-				addAll: (entity superInheritances collect: [ :e | e to ]);
-				yourself.
-			res := query asSet.
-			plop := entity isMethod
-				ifTrue: [ entity belongsTo ]
-				ifFalse: [ entity ].
-			plop isInnerClass
-				ifTrue: [ entity belongsTo isMethod
-						ifTrue: [ res add: entity belongsTo ] ].
-			res ])
-		flatCollect: [ :e | 
-			e isMethod
-				ifTrue: [ {e} ]
-				ifFalse: [ e methods ] ]) select: #isCoveringJacocoMethods	"self privateState
+	^ self privateState
 		cacheAt: #staticlyFoundJacocoTestsAllClasses
 		ifAbsentPut:
-			["	" ]"
+			[ ((self belongsTo
+				deepCollect:
+					[ :entity | 
+					| res query plop |
+					query := Set new
+						addAll: entity queryAllIncomingInvocations atTypeScope;
+						addAll: entity queryIncomingAccesses atTypeScope;
+						addAll: entity queryIncomingReferences atTypeScope;
+						addAll: entity queryOutgoingInheritances atTypeScope;
+						yourself.
+					res := query asSet.
+					plop := entity isMethod
+						ifTrue: [ entity belongsTo ]
+						ifFalse: [ entity ].
+					plop isInnerClass
+						ifTrue:
+							[ entity belongsTo isMethod
+								ifTrue: [ res add: entity belongsTo ] ].
+					res ])
+				flatCollect:
+					[ :e | 
+					e isMethod
+						ifTrue: [ {e} ]
+						ifFalse: [ e methods ] ]) select: #isCoveringJacocoMethods ]
 ]

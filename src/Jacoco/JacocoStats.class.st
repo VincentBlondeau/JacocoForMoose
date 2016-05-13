@@ -65,7 +65,7 @@ JacocoStats class >> experimentNameMapping [
 JacocoStats class >> exportStatData: aCollection withProjectName: projectName [
 	| data stream writter |
 	data := aCollection select: #isDictionary.
-	[ stream := StandardFileStream forceNewFileNamed: 'c:\tmp\export-stats.csv'.
+	[ stream := StandardFileStream forceNewFileNamed: 'c:\tmp\export-statsV2.csv'.
 	writter := (NeoCSVWriter on: stream)
 		separator: $;;
 		yourself.
@@ -135,6 +135,7 @@ JacocoStats class >> isRConnectorAvailable [
 		at: #RObject
 		ifPresent: [ 'library' asREval: {'car'. }.
 			'library' asREval: {'ggplot2'. }.
+			'library' asREval: {'Hmisc'}.
 			true ]
 		ifAbsent: [ false ]
 ]
@@ -150,12 +151,30 @@ JacocoStats class >> numberOfTestOf: aString [
 JacocoStats class >> obtainStatsFrom: anAssociation projectName: projectName writter: writter [
 	| expName stats res |
 	expName := self experimentNameMapping at: anAssociation key.
-	{('gain-unif' -> [ :coll | (coll at: #data) collect: [ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
-	('recall-unif' -> [ :coll | (coll at: #data) collect: [ :e | e at: #Recall ] ]).
-	('precision-unif' -> [ :coll | (coll at: #data) collect: [ :e | e at: #Prec ] ]).
-	('gain-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
-	('recall-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Recall ] ]).
-	('precision-commit' -> [ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Prec ] ])}
+	{('gain-unif'
+		->
+			[ :coll | 
+			(coll at: #data)
+				collect:
+					[ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
+	('recall-unif'
+		->
+			[ :coll | (coll at: #data) collect: [ :e | e at: #Recall ] ]).
+	('precision-unif'
+		->
+			[ :coll | (coll at: #data) collect: [ :e | e at: #Prec ] ]).
+	('gain-commit'
+		->
+			[ :coll | 
+			(coll at: #dataCommit)
+				collect:
+					[ :e | (e at: #positives) size / (self numberOfTestOf: projectName) asFloat ] ]).
+	('recall-commit'
+		->
+			[ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Recall ] ]).
+	('precision-commit'
+		->
+			[ :coll | (coll at: #dataCommit) collect: [ :e | e at: #Prec ] ])}
 		do:
 			[ :assoc | 
 			| data sd |
@@ -167,6 +186,48 @@ JacocoStats class >> obtainStatsFrom: anAssociation projectName: projectName wri
 				add: projectName , '-' , expName , '-' , assoc key;
 				addAll: stats asObject;
 				add: sd first;
+				yourself.
+			writter nextPut: res ].
+	{('gain-weighted'
+		->
+			[ :coll | 
+			(coll at: #data)
+				collect:
+					[ :e | 
+					{((e at: #positives) size asFloat
+						/ (self numberOfTestOf: projectName) asFloat).
+					(e at: #numberOfFineGrainedCommits)} ]
+				thenReject: #isNil ]).
+	('recall-weighted'
+		->
+			[ :coll | 
+		
+			(coll at: #recallFineGrainedWeightedMean) third
+				collect: [ :e | 
+					{e first.
+					e fourth} ] ]).
+	('precision-weighted'
+		->
+			[ :coll | 
+			(coll at: #precisionFineGrainedWeightedMean) third
+				collect: [ :e | 
+					{e first.
+					e fourth} ] ])}
+		do:
+			[ :assoc | 
+			| data sd |
+			assoc key.
+			data := (assoc value value: anAssociation value)
+				asOrderedCollection.
+			stats := 'wtd.quantile'
+				asREval:
+					{(data collect: #first).
+					('weights' -> (data collect: #second))}.
+			sd := 'N/A'.
+			res := OrderedCollection new
+				add: projectName , '-' , expName , '-' , assoc key;
+				addAll: stats asObject;
+				add: sd;
 				yourself.
 			writter nextPut: res ]
 ]
@@ -621,12 +682,12 @@ JacocoStats >> statsOn: aMooseModel [
 	(#numberOfClassCommits
 		-> (self allNotStubMethods sum: [ :e | e belongsTo numberOfCommits ])).
 	(#numberOfMethodCommits
-		-> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ]))."
+		-> (self allNotStubMethods sum: [ :e | e numberOfFineGrainedCommits ])).
 		(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticAllClassStatsOn:
 		dicoEntry: #'10-jacocoVSStaticAllClass').
-"	(self
+	(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticCallableStatsOn:
 		dicoEntry: #'4-jacocoVSStaticWithCallables').
@@ -662,10 +723,10 @@ JacocoStats >> statsOn: aMooseModel [
 		statsOn: aMooseModel
 		methodSelector: #makeStaticAccessAndInnerAndInheritanceStatsOn:
 		dicoEntry: #'0-jacocoVSStaticWithAccessAndInnerAndInheritances').
-	(self
+	"(self
 		statsOn: aMooseModel
 		methodSelector: #makeStaticAccessAndInnerAndInheritanceAndCallableStatsOn:
-		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')"}
+		dicoEntry: #'9-jacocoVSStaticWithAccessAndInnerAndInheritancesAndCallables')}
 		asDictionary
 ]
 
