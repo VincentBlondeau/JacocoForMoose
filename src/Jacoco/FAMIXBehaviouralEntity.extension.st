@@ -11,22 +11,6 @@ FAMIXBehaviouralEntity >> allIncomingInvocations [
 ]
 
 { #category : #'*Jacoco-Import - static' }
-FAMIXBehaviouralEntity >> allIncomingInvocationsWith: selectors [
-	| res |
-	res := {self}
-		deepCollect:
-			[ :entity | 
-			| duplicatedEntities |
-			duplicatedEntities := entity duplicatedEntities.
-			duplicatedEntities
-				flatCollect:
-					[ :aDuplicatedEntity | 
-					selectors
-						collect: [ :aSelector | aDuplicatedEntity perform: aSelector ] ] ].
-	^ res
-]
-
-{ #category : #'*Jacoco-Import - static' }
 FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCalls [
 	^ self allIncomingInvocationsWith: {#withIncomingInvocationsAndAccessCalls}
 ]
@@ -41,13 +25,6 @@ FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInnerAndInheri
 	^ self
 		allIncomingInvocationsWith:
 			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withImplementMethods)
-]
-
-{ #category : #'*Jacoco-Import - static' }
-FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables [
-	^ self
-		allIncomingInvocationsWith:
-			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withCallables #withImplementMethods)
 ]
 
 { #category : #'*Jacoco-Import - static' }
@@ -123,7 +100,7 @@ FAMIXBehaviouralEntity >> coveredByTestClassesWithoutSomeClasses [
 	^ self coveredByJacocoTestMethods reject: [ :c | c mooseName = 'net::atos::wlp::cedicam::AbstractTest' ]
 ]
 
-{ #category : #'*Jacoco-Import' }
+{ #category : #'*Jacoco-TestSelectionForProd' }
 FAMIXBehaviouralEntity >> duplicatedEntities [
 	^ self privateState
 		cacheAt: #duplicatedEntities
