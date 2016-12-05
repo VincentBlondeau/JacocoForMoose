@@ -100,19 +100,6 @@ FAMIXBehaviouralEntity >> coveredByTestClassesWithoutSomeClasses [
 	^ self coveredByJacocoTestMethods reject: [ :c | c mooseName = 'net::atos::wlp::cedicam::AbstractTest' ]
 ]
 
-{ #category : #'*Jacoco-TestSelectionForProd' }
-FAMIXBehaviouralEntity >> duplicatedEntities [
-	^ self privateState
-		cacheAt: #duplicatedEntities
-		ifAbsentPut:
-			[ (self mooseModel allModelClassesAndInterfacesWithDuplicatedMethods
-				includes: self belongsTo)
-				ifTrue:
-					[ self belongsTo methods
-						select: [ :m | m signature = self signature ] ]
-				ifFalse: [ {self} ] ]
-]
-
 { #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> isCallingCoveredTestsClasses [
 	^ (self
