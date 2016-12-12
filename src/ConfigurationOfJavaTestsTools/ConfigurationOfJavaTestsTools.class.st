@@ -111,28 +111,30 @@ ConfigurationOfJavaTestsTools class >> validate [
 { #category : #baselines }
 ConfigurationOfJavaTestsTools >> baseline01: spec [
 	<version: '0.1-baseline'>
-	spec
-		for: #common
-		do: [ spec blessing: #baseline.
-			spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
-			spec
-				project: 'SystemLogger'
-					with: [ spec
-						className: #ConfigurationOfSystemLogger;
-						versionString: #development;
-						repository: 'http://smalltalkhub.com/mc/StephaneDucasse/SystemLogger/main/' ];
-				project: 'MavenForMoose'
-					with: [ spec
-						className: #ConfigurationOfMavenForMoose;
-						versionString: #bleedingEdge;
-						repository: 'http://smalltalkhub.com/mc/VincentBlondeau/MavenForMoose/main/' ].
-			spec
-				package: #Infinitest;
-				package: #'Surefire-Core';
-				package: #'Jacoco-TestSelectonForProd'; 
-				package: #Jacoco
-					with: [ spec requires: #(#'Surefire-Core' #Infinitest #'Jacoco-TestSelectonForProd') ];
-				package: #'Surefire-Tests' with: [ spec requires: #(#'Surefire-Core') ] ]
+
+	spec for: #'common' do: [
+		spec blessing: #'baseline'.
+		spec repository: 'http://smalltalkhub.com/mc/VincentBlondeau/Jacoco/main/'.
+		spec 
+			project: 'MavenForMoose' with: [
+				spec
+					className: #ConfigurationOfMavenForMoose;
+					versionString: #'bleedingEdge';
+					repository: 'http://smalltalkhub.com/mc/VincentBlondeau/MavenForMoose/main/' ];
+			project: 'SystemLogger' with: [
+				spec
+					className: #ConfigurationOfSystemLogger;
+					versionString: #'development';
+					repository: 'http://smalltalkhub.com/mc/StephaneDucasse/SystemLogger/main/' ].
+		spec 
+			package: #Infinitest;
+			package: #Jacoco with: [
+				spec requires: #(#'Surefire-Core' #Infinitest ). ];
+			package: 'Jacoco-TestSelectionForProd';
+			package: #'Surefire-Core';
+			package: #'Surefire-Tests' with: [
+				spec requires: #(#'Surefire-Core' ). ]. ].
+
 ]
 
 { #category : #accessing }
