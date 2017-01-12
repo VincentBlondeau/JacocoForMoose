@@ -167,6 +167,7 @@ FAMIXBehaviouralEntity >> matchWithJacocoDescription: aJacocoDescription [
 FAMIXBehaviouralEntity >> numberOfArgsFromSignature [
 	<MSEProperty: #numberOfArgsFromSignature type: #Number>
 	<MSEComment: 'numberOfArgsFromSignature'>
+	<derived>
 	
 	| cut args |
 	cut := self signature substrings: '('.
