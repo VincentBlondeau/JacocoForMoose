@@ -1,6 +1,6 @@
-Extension { #name : #FAMIXParameter }
+Extension { #name : #FAMIXLocalVariable }
 
 { #category : #'*Jacoco-TestSelectionForProd' }
-FAMIXParameter >> retrieveTests [
+FAMIXLocalVariable >> retrieveTests [
 	^ self parentBehaviouralEntity ifNotNil: [ :e | e retrieveTests ] ifNil: [ #() ]
 ]
