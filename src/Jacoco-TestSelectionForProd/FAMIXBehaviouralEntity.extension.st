@@ -20,7 +20,7 @@ FAMIXBehaviouralEntity >> allIncomingInvocationsWith: selectors [
 FAMIXBehaviouralEntity >> allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables [
 	^ self
 		allIncomingInvocationsWith:
-			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withCallables #withImplementMethods)
+			#(#withInnerclassDefiningMethods #withIncomingInvocationsAndAccessCalls #withCallables #withImplementMethods #withBeforeAnnotations)
 ]
 
 { #category : #'*Jacoco-TestSelectionForProd' }
@@ -59,6 +59,17 @@ FAMIXBehaviouralEntity >> retrieveTests [
 	^ (OrderedCollection with: self)
 		addAll: self allIncomingInvocationsWithAccessCallsAndInnerAndInheritanceAndCallables;
 		yourself
+]
+
+{ #category : #'*Jacoco-TestSelectionForProd' }
+FAMIXBehaviouralEntity >> withBeforeAnnotations [
+	"@Before -> Select @Test methods of current and all subclasses"
+
+	| res |
+	res := OrderedCollection new.
+	(self isAnnotatedWith: 'Before')
+		ifTrue: [ self belongsTo withSubclassesDo: [ :subclass | res addAll: subclass allTestMethods ] ].
+	^ res select: #isNotNil
 ]
 
 { #category : #'*Jacoco-TestSelectionForProd' }
