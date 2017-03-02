@@ -146,16 +146,14 @@ FAMIXBehaviouralEntity >> withIncommingInvocations [
 FAMIXBehaviouralEntity >> withInnerclassDefiningMethods [
 	| res |
 	res := OrderedCollection with: self.
+	self belongsTo ifNil: [ ^ res ].
 	self belongsTo isInnerClass
-		ifTrue:
-			[ "{self belongsTo.
+		ifTrue: [ "{self belongsTo.
 			self mooseName} asLog
 				tag: 'withInnerclassDefiningMethods';
 				emit."
 			self belongsTo belongsTo isMethod
-				ifTrue:
-					[ res add: self belongsTo belongsTo.
-					res
-						addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
+				ifTrue: [ res add: self belongsTo belongsTo.
+					res addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
 	^ res
 ]
