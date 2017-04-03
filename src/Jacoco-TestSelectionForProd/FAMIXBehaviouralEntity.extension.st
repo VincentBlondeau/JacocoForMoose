@@ -153,7 +153,9 @@ FAMIXBehaviouralEntity >> withInnerclassDefiningMethods [
 				tag: 'withInnerclassDefiningMethods';
 				emit."
 			self belongsTo belongsTo isMethod
-				ifTrue: [ res add: self belongsTo belongsTo.
+				ifTrue: [ 
+					self belongsTo belongsTo ifNil: [ ^res ].
+					res add: self belongsTo belongsTo.
 					res addAll: self belongsTo belongsTo withInnerclassDefiningMethods ] ].
 	^ res
 ]
