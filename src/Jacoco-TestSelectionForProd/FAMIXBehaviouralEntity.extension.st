@@ -81,11 +81,9 @@ FAMIXBehaviouralEntity >> withCallables [
 		add: self;
 		yourself.
 	self signature = 'call()'
-		ifTrue:
-			[ self
-				assert: (self belongsTo directSuperclasses anySatisfy: [ :e | e name = 'Callable' ]).
-			constructor := self belongsTo methods
-				select: [ :m | m isConstructor or: [ m name endsWith: '.' , m belongsTo name ] ].
+		ifTrue: [ (self belongsTo isNotNil and: [ self belongsTo directSuperclasses anySatisfy: [ :e | e name = 'Callable' ] ])
+				ifTrue: [ ^ return ].
+			constructor := self belongsTo methods select: [ :m | m isConstructor or: [ m name endsWith: '.' , m belongsTo name ] ].
 			"self assert: constructor size = 1."
 			constructor size = 1
 				ifFalse: [ ^ return select: #isNotNil ].
