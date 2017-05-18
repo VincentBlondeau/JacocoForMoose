@@ -46,5 +46,5 @@ FAMIXMethod >> isTest [
 	<MSEProperty: #isTest type: #Boolean>
 	<derived>
 	<MSEComment: 'If the method is a test'>
-	^ self isJUnit4Test
+	^ self isJUnit4Test or: [ self isJUnit3Test ]
 ]

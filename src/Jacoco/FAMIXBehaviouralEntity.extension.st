@@ -147,6 +147,14 @@ FAMIXBehaviouralEntity >> isCoveringJacocoMethods [
 ]
 
 { #category : #'*Jacoco-Import' }
+FAMIXBehaviouralEntity >> isJUnit3Test [
+	<MSEProperty: #isJUnit4Test type: #Boolean>
+	<derived>
+	<MSEComment: 'True if the method is considered as a Junit 3 Java test'>
+	^ self belongsTo isJUnit3TestCase and: [ self name beginsWith: 'test' ]
+]
+
+{ #category : #'*Jacoco-Import' }
 FAMIXBehaviouralEntity >> matchWithJacocoDescription: aJacocoDescription [
 	| returnValue selfArguments jacocoArgs jacocoArgsTypes return |
 	{self signature.aJacocoDescription}.
