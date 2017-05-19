@@ -11,6 +11,22 @@ FAMIXType >> innerMethods [
 ]
 
 { #category : #'*Jacoco' }
+FAMIXType >> isJUnit3TestCaseWhenYouDoNotHaveAllTheInformations [
+	^ (((self name beginsWith: 'Test') or: [ self name endsWith: 'Test' ])
+		and: [ self sourceAnchor ifNotNil: [ :sa | sa fileName includesSubstring: 'src/test/java' ] ifNil: [ true ] ])
+		and: [ self methods anySatisfy: [ :m | m name beginsWith: 'test' ] ]
+]
+
+{ #category : #'*Jacoco' }
+FAMIXType >> isTestCase [
+	<MSEProperty: #isTestCase type: #Boolean>
+	<derived>
+	<MSEComment: 'True if the method is considered as a Java test'>
+	^ self isJUnit3TestCaseWhenYouDoNotHaveAllTheInformations
+		or: [ self isJUnit3TestCase or: [ self isJUnit4TestCase ] ]
+]
+
+{ #category : #'*Jacoco' }
 FAMIXType >> jacocoChildren [
 	^ self classes , (self classes flatCollect: #jacocoChildren)
 		, self methods
