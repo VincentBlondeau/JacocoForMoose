@@ -151,7 +151,7 @@ FAMIXBehaviouralEntity >> isJUnit3Test [
 	<MSEProperty: #isJUnit4Test type: #Boolean>
 	<derived>
 	<MSEComment: 'True if the method is considered as a Junit 3 Java test'>
-	^ self belongsTo isJUnit3TestCase and: [ self name beginsWith: 'test' ]
+	^ self belongsTo ifNotNil: [ :e | e  isJUnit3TestCase and: [ self name beginsWith: 'test' ]] ifNil: [ false ]
 ]
 
 { #category : #'*Jacoco-Import' }
