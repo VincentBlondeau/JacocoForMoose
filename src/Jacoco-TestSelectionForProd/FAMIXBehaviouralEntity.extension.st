@@ -38,15 +38,12 @@ FAMIXBehaviouralEntity >> isInStaticPartOfTheInitializerCommingFrom: aMethod [
 		ifTrue: [ aMethod belongsTo ]
 		ifFalse: [ aMethod declaredType ].
 	collectionOfPotentialAttributes := belongsTo attributes
-		select:
-			[ :att | methodContainer withSuperclassHierarchy includes: att declaredType ].
+		select: [ :att | methodContainer ifNotNil: [ :e | e withSuperclassHierarchy includes: att declaredType ] ifNil: [ false ] ].
 	collectionOfPotentialAttributes
-		ifEmpty:
-			[ self sourceAnchor ifNotNil: [ ^ true ].
+		ifEmpty: [ self sourceAnchor ifNotNil: [ ^ true ].
 			^ belongsTo attributes anySatisfy: [ :att | att hasClassScope ] ].
 	collectionOfPotentialAttributes size = 1
-		ifFalse:
-			[ Log
+		ifFalse: [ Log
 				warn:
 					{'[JacocoStats] More than one attribute found'.
 					self.
